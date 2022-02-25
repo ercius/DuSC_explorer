@@ -124,16 +124,11 @@ class fourD(QWidget):
 
         # Get the data and change to float
         if action.text() == 'Export diffraction':
-            image = self.dp
+            imsave(outPath, self.dp.astype(np.float32))
         elif action.text() == 'Export real':
-            image = self.rs
+            imsave(outPath, self.rs.astype(np.float32))
         else:
             print('Export: unknown action {}'.format(action.text()))
-
-        try:
-            imsave(outPath, image.astype(np.float32))
-        except:
-            print('No image to export')
 
     def _on_log(self):
         self.log_diffraction = not self.log_diffraction
@@ -178,7 +173,7 @@ class fourD(QWidget):
         self.sa.allow_full_expand = True
         self.scan_dimensions = self.sa.scan_shape
         self.frame_dimensions = self.sa.frame_shape
-        print('initial scan dimensions = {}'.format(self.scan_dimensions))
+        print('scan dimensions = {}'.format(self.scan_dimensions))
 
         self.dp = np.zeros(self.frame_dimensions[0] * self.frame_dimensions[1], np.uint32)
         self.rs = np.zeros(self.scan_dimensions[0] * self.scan_dimensions[1], np.uint32)
@@ -192,8 +187,8 @@ class fourD(QWidget):
         self.RSroi.setSize([ii//4 for ii in self.scan_dimensions])
         self.DProi.setSize([ii // 4 for ii in self.frame_dimensions])
 
-        self.RSroi.setPos([0, 0])
-        self.DProi.setPos([0, 0])
+        self.RSroi.setPos([1, 1])
+        self.DProi.setPos([1, 1])
 
         self.update_real()
         self.update_diffr()
