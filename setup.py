@@ -18,7 +18,7 @@ here = path.abspath(path.dirname(__file__))
 #    long_description = f.read()
 
 setup(
-    name='4dcamera_gui',
+    name='ncempy_4dgui',
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
@@ -26,17 +26,17 @@ setup(
     version='0.1.0',
 
     description='4D Camera GUI for sparse data',
-    long_description=long_description,
+    long_description='long_description',
 
     # The project's main homepage.
-    url='https://github.com/ercius/stempy',
+    url='https://github.com/ercius/4dcamera_gui',
 
     # Author details
     author='P. Ercius',
     author_email='percius@lbl.gov',
 
     # Choose your license
-    license='MIT',
+    license='BSD Clause 3',
 
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=[
@@ -51,13 +51,11 @@ setup(
         'Topic :: Scientific/Engineering',
 
         # Pick your license as you wish (should match "license" above)
-        'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
+        'License :: OSI Approved :: BSD License',
 
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3',
     ],
 
     # What does your project relate to?
@@ -100,6 +98,8 @@ setup(
     # To provide executable scripts, use entry points in preference to the
     # "scripts" keyword. Entry points provide cross-platform support and allow
     # pip to create the appropriate form of executable for the target platform.
-    #entry_points={
-    #},
+    entry_points={'console_scripts': [
+        'ncempy_4dgui = ncempy_4dgui:main',
+        '4Dcamera_gui = ncempy_4dgui:main'
+    ]},
 )
