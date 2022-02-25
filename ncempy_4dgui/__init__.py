@@ -35,7 +35,6 @@ class fourD(QWidget):
         self.dp = None
         self.rs = None
         self.log_diffraction = True
-        print('Use log?: {}'.format(self.log_diffraction))
 
         super(fourD, self).__init__(*args, *kwargs)
         self.setWindowTitle("Stempy: Sparse 4D Data Explorer")
@@ -91,8 +90,8 @@ class fourD(QWidget):
                                 removable=False, invertible=False, pen='g')
         self.view.addItem(self.RSroi)
 
-        # Sum ROI
-        self.DProi = pg.RectROI(pos=(287 - 50, 287 - 50), size=(10, 10),
+        # Diffraction ROI
+        self.DProi = pg.RectROI(pos=(0, 0), size=(10, 10),
                                 translateSnap=True, snapSize=1, scaleSnap=True,
                                 removable=False, invertible=False, pen='g')
         self.view2.addItem(self.DProi)
@@ -129,7 +128,7 @@ class fourD(QWidget):
         elif action.text() == 'Export real':
             image = self.rs
         else:
-            print('Export: unknown action {}'.print(action.text()))
+            print('Export: unknown action {}'.format(action.text()))
 
         try:
             imsave(outPath, image.astype(np.float32))
@@ -193,6 +192,9 @@ class fourD(QWidget):
         self.RSroi.setSize([ii//4 for ii in self.scan_dimensions])
         self.DProi.setSize([ii // 4 for ii in self.frame_dimensions])
 
+        self.RSroi.setPos([0, 0])
+        self.DProi.setPos([0, 0])
+
         self.update_real()
         self.update_diffr()
 
@@ -202,7 +204,7 @@ class fourD(QWidget):
         """ Update the diffraction space image by summing in real space
         """
         self.dp = self.sa[int(self.RSroi.pos().y()):int(self.RSroi.pos().y() + self.RSroi.size().y()) + 1,
-                     int(self.RSroi.pos().x()):int(self.RSroi.pos().x() + self.RSroi.size().x()) + 1, :, :]
+                          int(self.RSroi.pos().x()):int(self.RSroi.pos().x() + self.RSroi.size().x()) + 1, :, :]
         self.dp = self.dp.sum(axis=(0, 1))
 
         if self.log_diffraction:
