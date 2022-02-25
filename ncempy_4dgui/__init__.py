@@ -105,7 +105,6 @@ class fourD(QWidget):
 
     def _on_export(self):
         """Export the shown diffraction pattern as raw data"""
-        image = None
         action = self.sender()
 
         # Get a file path to save to in current directory
