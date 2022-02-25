@@ -153,6 +153,7 @@ class fourD(QWidget):
 
     @staticmethod
     def temp(aa):
+        """Temporary empty function to avoid printing warning"""
         pass
 
     def setData(self, fPath):
@@ -166,7 +167,7 @@ class fourD(QWidget):
         """
         self.statusBar.showMessage("Loading the sparse data...")
 
-        # Remove "full expansion" warning
+        # Temporary: remove "full expansion" warning
         stio.sparse_array._warning = self.temp
 
         # Load data as a SparseArray class
