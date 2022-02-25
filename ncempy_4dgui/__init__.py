@@ -4,8 +4,6 @@ Interactively display and analyze sparse 4D-STEM data.
 author: Peter Ercius
 """
 
-print('init')
-
 from pathlib import Path
 
 import pyqtgraph as pg
@@ -109,6 +107,7 @@ class fourD(QWidget):
 
     def _on_export(self):
         """Export the shown diffraction pattern as raw data"""
+        image = None
         action = self.sender()
 
         # Get a file path to save to in current directory
@@ -129,15 +128,16 @@ class fourD(QWidget):
 
         # Get the data and change to float
         if action.text() == 'Export diffraction':
-            # image = self.DPimageview.image
-            image = self.dp.reshape(self.frame_dimensions)
+            image = self.dp
         elif action.text() == 'Export real':
-            # image = self.RSimageview.image
-            image = self.rs.reshape(self.scan_dimensions)
+            image = self.rs
         else:
-            print(action.text())
+            print('Export: unknown action {}'.print(action.text()))
 
-        imsave(outPath, image.astype(np.float32))
+        try:
+            imsave(outPath, image.astype(np.float32))
+        except:
+            print('No image to export')
 
     def _on_log(self):
         self.log_diffraction = not self.log_diffraction
@@ -198,28 +198,28 @@ class fourD(QWidget):
 
         self.statusBar.showMessage('loaded {}'.format(fPath.name))
 
+    def update_diffr(self):
+        """ Update the diffraction space image by summing in real space
+        """
+        self.dp = self.sa[int(self.RSroi.pos().y()):int(self.RSroi.pos().y() + self.RSroi.size().y()) + 1,
+                     int(self.RSroi.pos().x()):int(self.RSroi.pos().x() + self.RSroi.size().x()) + 1, :, :]
+        self.dp = self.dp.sum(axis=(0, 1))
 
-def update_diffr(self):
-    """ Update the diffraction space image by summing in real space
-    """
-    im = self.sa[int(self.RSroi.pos().y()):int(self.RSroi.pos().y() + self.RSroi.size().y()) + 1,
-         int(self.RSroi.pos().x()):int(self.RSroi.pos().x() + self.RSroi.size().x()) + 1, :, :].sum(axis=(0, 1))
-    if self.log_diffraction:
-        self.DPimageview.setImage(np.log(im + .1), autoRange=True)
-    else:
-        self.DPimageview.setImage(im, autoRange=True)
+        if self.log_diffraction:
+            self.DPimageview.setImage(np.log(self.dp + 1), autoRange=True)
+        else:
+            self.DPimageview.setImage(self.dp, autoRange=True)
 
-
-def update_real(self):
-    """ Update the real space image by summing in diffraction space
-    """
-    # print('{}, {}'.format(self.DProi.pos().x(),self.DProi.pos().y()))
-    # print('{}, {}'.format(self.DProi.size().x(),self.DProi.size().y()))
-    # print('sa = {}'.format(self.sa.shape))
-    self.rs = self.sa[:, :, int(self.DProi.pos().y()) - 1:int(self.DProi.pos().y() + self.DProi.size().y()) + 0,
-              int(self.DProi.pos().x()) - 1:int(self.DProi.pos().x() + self.DProi.size().x()) + 0]
-    im = self.rs.sum(axis=(2, 3))
-    self.RSimageview.setImage(im, autoRange=True)
+    def update_real(self):
+        """ Update the real space image by summing in diffraction space
+        """
+        # print('{}, {}'.format(self.DProi.pos().x(),self.DProi.pos().y()))
+        # print('{}, {}'.format(self.DProi.size().x(),self.DProi.size().y()))
+        # print('sa = {}'.format(self.sa.shape))
+        self.rs = self.sa[:, :, int(self.DProi.pos().y()) - 1:int(self.DProi.pos().y() + self.DProi.size().y()) + 0,
+                                int(self.DProi.pos().x()) - 1:int(self.DProi.pos().x() + self.DProi.size().x()) + 0]
+        self.rs = self.rs.sum(axis=(2, 3))
+        self.RSimageview.setImage(self.rs, autoRange=True)
 
 
 def main():
@@ -227,7 +227,3 @@ def main():
     fourD_view = fourD()
     fourD_view.show()
     qapp.exec_()
-
-
-#if __name__ == '__main__':
-#    main()
