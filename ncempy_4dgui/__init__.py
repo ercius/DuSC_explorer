@@ -20,8 +20,8 @@ class fourD(QWidget):
 
     def __init__(self, *args, **kwargs):
 
-        self.RSlimit = None
-        self.DPlimit = None
+        self.real_space_limit = None
+        self.diffraction_pattern_limit = None
         self.sa = None
         self.current_dir = Path.home()
         self.scale = 1
@@ -39,29 +39,26 @@ class fourD(QWidget):
 
         super(fourD, self).__init__(*args, *kwargs)
         self.setWindowTitle("Stempy: Sparse 4D Data Explorer")
-        self.setWindowIcon(QtGui.QIcon(r'C:\Users\linol\Downloads\MF_logo_only_small.ico'))
+        self.setWindowIcon(QtGui.QIcon('MF_logo_only_small.ico'))
 
-        # Add an graphics/view/image to show either 2D linescan or 3D SI
+        # Add a graphics/view/image
         # Need to set invertY = True and row-major
         self.graphics = pg.GraphicsLayoutWidget()
         self.view = self.graphics.addViewBox(row=0, col=0, invertY=True)
         self.view2 = self.graphics.addViewBox(row=0, col=1, invertY=True)
 
-        self.RSimageview = pg.ImageItem(border=pg.mkPen('w'))
-        self.view.addItem(self.RSimageview)
-        self.RSimageview.setImage(np.zeros((100, 100), dtype=np.uint32))
+        self.real_space_imageview = pg.ImageItem(border=pg.mkPen('w'))
+        self.view.addItem(self.real_space_imageview)
+        self.real_space_imageview.setImage(np.zeros((100, 100), dtype=np.uint32))
         self.view.setAspectLocked()
 
-        self.DPimageview = pg.ImageItem(border=pg.mkPen('w'))
-        self.view2.addItem(self.DPimageview)
-        self.DPimageview.setImage(np.zeros((100, 100), dtype=np.uint32))
+        self.diffraction_pattern_imageview = pg.ImageItem(border=pg.mkPen('w'))
+        self.view2.addItem(self.diffraction_pattern_imageview)
+        self.diffraction_pattern_imageview.setImage(np.zeros((100, 100), dtype=np.uint32))
         self.view2.setAspectLocked()
 
-        self.DPimageview.setOpts(axisOrder="row-major")
-        self.RSimageview.setOpts(axisOrder="row-major")
-
-        # self.DPimageview.invertY(False)
-        # self.RSimageview.invertY(False)
+        self.diffraction_pattern_imageview.setOpts(axisOrder="row-major")
+        self.real_space_imageview.setOpts(axisOrder="row-major")
 
         self.statusBar = QStatusBar()
         self.statusBar.showMessage("Starting up...")
@@ -89,13 +86,13 @@ class fourD(QWidget):
 
         # Initialize the user interface objects
         # Image ROI
-        self.RSroi = pg.RectROI(pos=(0, 0), size=(50, 50),
+        self.RSroi = pg.RectROI(pos=(0, 0), size=(10, 10),
                                 translateSnap=True, snapSize=1, scaleSnap=True,
                                 removable=False, invertible=False, pen='g')
         self.view.addItem(self.RSroi)
 
         # Sum ROI
-        self.DProi = pg.RectROI(pos=(287 - 50, 287 - 50), size=(50, 50),
+        self.DProi = pg.RectROI(pos=(287 - 50, 287 - 50), size=(10, 10),
                                 translateSnap=True, snapSize=1, scaleSnap=True,
                                 removable=False, invertible=False, pen='g')
         self.view2.addItem(self.DProi)
@@ -187,11 +184,14 @@ class fourD(QWidget):
         self.dp = np.zeros(self.frame_dimensions[0] * self.frame_dimensions[1], np.uint32)
         self.rs = np.zeros(self.scan_dimensions[0] * self.scan_dimensions[1], np.uint32)
 
-        self.DPlimit = QRectF(0, 0, self.frame_dimensions[1], self.frame_dimensions[0])
-        self.DProi.maxBounds = self.DPlimit
+        self.diffraction_pattern_limit = QRectF(0, 0, self.frame_dimensions[1], self.frame_dimensions[0])
+        self.DProi.maxBounds = self.diffraction_pattern_limit
 
-        self.RSlimit = QRectF(0, 0, self.scan_dimensions[1], self.scan_dimensions[0])
-        self.RSroi.maxBounds = self.RSlimit
+        self.real_space_limit = QRectF(0, 0, self.scan_dimensions[1], self.scan_dimensions[0])
+        self.RSroi.maxBounds = self.real_space_limit
+
+        self.RSroi.setSize([ii//4 for ii in self.scan_dimensions])
+        self.DProi.setSize([ii // 4 for ii in self.frame_dimensions])
 
         self.update_real()
         self.update_diffr()
@@ -206,9 +206,9 @@ class fourD(QWidget):
         self.dp = self.dp.sum(axis=(0, 1))
 
         if self.log_diffraction:
-            self.DPimageview.setImage(np.log(self.dp + 1), autoRange=True)
+            self.diffraction_pattern_imageview.setImage(np.log(self.dp + 1), autoRange=True)
         else:
-            self.DPimageview.setImage(self.dp, autoRange=True)
+            self.diffraction_pattern_imageview.setImage(self.dp, autoRange=True)
 
     def update_real(self):
         """ Update the real space image by summing in diffraction space
@@ -219,10 +219,16 @@ class fourD(QWidget):
         self.rs = self.sa[:, :, int(self.DProi.pos().y()) - 1:int(self.DProi.pos().y() + self.DProi.size().y()) + 0,
                                 int(self.DProi.pos().x()) - 1:int(self.DProi.pos().x() + self.DProi.size().x()) + 0]
         self.rs = self.rs.sum(axis=(2, 3))
-        self.RSimageview.setImage(self.rs, autoRange=True)
+        self.real_space_imageview.setImage(self.rs, autoRange=True)
+
+
+def open_file():
+    """Start the graphical user interface by opening a file. This is used from a python interpreter."""
+    main()
 
 
 def main():
+    """Main function used to start the GUI."""
     qapp = QApplication([])
     fourD_view = fourD()
     fourD_view.show()
