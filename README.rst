@@ -19,11 +19,15 @@ Running the GUI
 ===============
 
 If you installed the source (see above) then you can type
-``ncempy_4dgui``
-at a terminal r command prompt and the GUI should start
 
-ALternatively, in python you can run these commands:
+``$ ncempy_4dgui``
+
+at a terminal or command prompt and the GUI should start.
+
+Alternatively, in a python interpreter you can run these commands:
 
 ``>>> import ncempy_4dgui``
 
 ``>>> ncempy_4dgui.open_file()``
+
+to start the GUI.
