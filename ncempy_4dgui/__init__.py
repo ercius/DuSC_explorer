@@ -92,21 +92,21 @@ class fourD(QWidget):
 
         # Initialize the user interface objects
         # Image ROI
-        self.RSroi = pg.RectROI(pos=(0, 0), size=(10, 10),
-                                translateSnap=True, snapSize=1, scaleSnap=True,
-                                removable=False, invertible=False, pen='g')
-        self.view.addItem(self.RSroi)
+        self.real_space_roi = pg.RectROI(pos=(0, 0), size=(10, 10),
+                                         translateSnap=True, snapSize=1, scaleSnap=True,
+                                         removable=False, invertible=False, pen='g')
+        self.view.addItem(self.real_space_roi)
 
         # Diffraction ROI
-        self.DProi = pg.RectROI(pos=(0, 0), size=(10, 10),
-                                translateSnap=True, snapSize=1, scaleSnap=True,
-                                removable=False, invertible=False, pen='g')
-        self.view2.addItem(self.DProi)
+        self.diffraction_space_roi = pg.RectROI(pos=(0, 0), size=(10, 10),
+                                                translateSnap=True, snapSize=1, scaleSnap=True,
+                                                removable=False, invertible=False, pen='g')
+        self.view2.addItem(self.diffraction_space_roi)
 
         self.open_file()
 
-        self.RSroi.sigRegionChanged.connect(self.update_diffr)
-        self.DProi.sigRegionChanged.connect(self.update_real)
+        self.real_space_roi.sigRegionChanged.connect(self.update_diffr)
+        self.diffraction_space_roi.sigRegionChanged.connect(self.update_real)
 
     def _on_export(self):
         """Export the shown diffraction pattern as raw data"""
@@ -208,16 +208,16 @@ class fourD(QWidget):
         self.rs = np.zeros(self.scan_dimensions[0] * self.scan_dimensions[1], np.uint32)
 
         self.diffraction_pattern_limit = QRectF(0, 0, self.frame_dimensions[1], self.frame_dimensions[0])
-        self.DProi.maxBounds = self.diffraction_pattern_limit
+        self.diffraction_space_roi.maxBounds = self.diffraction_pattern_limit
 
         self.real_space_limit = QRectF(0, 0, self.scan_dimensions[1], self.scan_dimensions[0])
-        self.RSroi.maxBounds = self.real_space_limit
+        self.real_space_roi.maxBounds = self.real_space_limit
 
-        self.RSroi.setSize([ii//4 for ii in self.scan_dimensions])
-        self.DProi.setSize([ii//4 for ii in self.frame_dimensions])
+        self.real_space_roi.setSize([ii // 4 for ii in self.scan_dimensions])
+        self.diffraction_space_roi.setSize([ii // 4 for ii in self.frame_dimensions])
 
-        self.RSroi.setPos([0, 0])
-        self.DProi.setPos([0, 0])
+        self.real_space_roi.setPos([0, 0])
+        self.diffraction_space_roi.setPos([0, 0])
 
         self.update_real()
         self.update_diffr()
@@ -227,8 +227,8 @@ class fourD(QWidget):
     def update_diffr_stempy(self):
         """ Update the diffraction space image by summing in real space
         """
-        self.dp = self.sa[int(self.RSroi.pos().y()):int(self.RSroi.pos().y() + self.RSroi.size().y()) + 1,
-                          int(self.RSroi.pos().x()):int(self.RSroi.pos().x() + self.RSroi.size().x()) + 1, :, :]
+        self.dp = self.sa[int(self.real_space_roi.pos().y()):int(self.real_space_roi.pos().y() + self.real_space_roi.size().y()) + 1,
+                          int(self.real_space_roi.pos().x()):int(self.real_space_roi.pos().x() + self.real_space_roi.size().x()) + 1, :, :]
         self.dp = self.dp.sum(axis=(0, 1))
 
         if self.log_diffraction:
@@ -238,8 +238,8 @@ class fourD(QWidget):
 
     def update_diffr_jit(self):
         self.dp[:] = self.getDenseFrame_jit(
-            self.fr_full_3d[int(self.RSroi.pos().y()):int(self.RSroi.pos().y() + self.RSroi.size().y()) + 1,
-                            int(self.RSroi.pos().x()):int(self.RSroi.pos().x() + self.RSroi.size().x()) + 1, :],
+            self.fr_full_3d[int(self.real_space_roi.pos().y()):int(self.real_space_roi.pos().y() + self.real_space_roi.size().y()) + 1,
+            int(self.real_space_roi.pos().x()):int(self.real_space_roi.pos().x() + self.real_space_roi.size().x()) + 1, :],
             self.frame_dimensions)
 
         im = self.dp.reshape(self.frame_dimensions)
@@ -252,17 +252,17 @@ class fourD(QWidget):
         """ Update the real space image by summing in diffraction space
         """
         self.rs = self.sa[:, :,
-                          int(self.DProi.pos().y()) - 1:int(self.DProi.pos().y() + self.DProi.size().y()) + 0,
-                          int(self.DProi.pos().x()) - 1:int(self.DProi.pos().x() + self.DProi.size().x()) + 0]
+                  int(self.diffraction_space_roi.pos().y()) - 1:int(self.diffraction_space_roi.pos().y() + self.diffraction_space_roi.size().y()) + 0,
+                  int(self.diffraction_space_roi.pos().x()) - 1:int(self.diffraction_space_roi.pos().x() + self.diffraction_space_roi.size().x()) + 0]
         self.rs = self.rs.sum(axis=(2, 3))
         self.real_space_imageview.setImage(self.rs, autoRange=True)
 
     def update_real_jit(self):
         self.rs[:] = self.getImage_jit(self.fr_rows, self.fr_cols,
-                                       int(self.DProi.pos().y()) - 1,
-                                       int(self.DProi.pos().y() + self.DProi.size().y()) + 0,
-                                       int(self.DProi.pos().x()) - 1,
-                                       int(self.DProi.pos().x() + self.DProi.size().x()) + 0)
+                                       int(self.diffraction_space_roi.pos().y()) - 1,
+                                       int(self.diffraction_space_roi.pos().y() + self.diffraction_space_roi.size().y()) + 0,
+                                       int(self.diffraction_space_roi.pos().x()) - 1,
+                                       int(self.diffraction_space_roi.pos().x() + self.diffraction_space_roi.size().x()) + 0)
         im = self.rs.reshape(self.scan_dimensions)
         self.real_space_imageview.setImage(im, autoRange=True)
 
