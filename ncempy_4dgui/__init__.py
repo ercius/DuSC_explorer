@@ -9,6 +9,7 @@ from pathlib import Path
 import pyqtgraph as pg
 import numpy as np
 from tifffile import imsave
+from numba import jit
 import stempy.io as stio
 
 from qtpy.QtWidgets import *
@@ -39,6 +40,10 @@ class fourD(QWidget):
         super(fourD, self).__init__(*args, *kwargs)
         self.setWindowTitle("Stempy: Sparse 4D Data Explorer")
         self.setWindowIcon(QtGui.QIcon('MF_logo_only_small.ico'))
+
+        # Set the update strategy to the JIT version
+        self.update_real = self.update_real_jit
+        self.update_diffr = self.update_diffr_jit
 
         # Add a graphics/view/image
         # Need to set invertY = True and row-major
@@ -170,12 +175,34 @@ class fourD(QWidget):
         stio.sparse_array._warning = self.temp
 
         # Load data as a SparseArray class
-        self.sa = stio.SparseArray.from_hdf5(fPath)
+        self.sa = stio.SparseArray.from_hdf5(str(fPath))
 
         self.sa.allow_full_expand = True
         self.scan_dimensions = self.sa.scan_shape
         self.frame_dimensions = self.sa.frame_shape
         print('scan dimensions = {}'.format(self.scan_dimensions))
+
+        # Pre-calculate to speed things up
+        self.statusBar.showMessage("Converting the data...")
+        # Create a non-ragged array with zero padding
+        mm = 0
+        for ev in self.sa.data.ravel():
+            if ev.shape[0] > mm:
+                mm = ev.shape[0]
+        print('non-ragged array shape: {}'.format((self.sa.data.ravel().shape[0], mm)))
+
+        self.fr_full = np.zeros((self.sa.data.ravel().shape[0], mm), dtype=self.sa.data[0].dtype)
+        for ii, ev in enumerate(self.sa.data.ravel()):
+            self.fr_full[ii, :ev.shape[0]] = ev
+        self.fr_full_3d = self.fr_full.reshape((*self.scan_dimensions, self.fr_full.shape[1]))
+
+        # del frames
+
+        print('non-ragged array size = {} GB'.format(self.fr_full.nbytes / 1e9))
+
+        # Find the row and col for each electron strike
+        self.fr_rows = self.fr_full // 576
+        self.fr_cols = self.fr_full % 576
 
         self.dp = np.zeros(self.frame_dimensions[0] * self.frame_dimensions[1], np.uint32)
         self.rs = np.zeros(self.scan_dimensions[0] * self.scan_dimensions[1], np.uint32)
@@ -187,17 +214,17 @@ class fourD(QWidget):
         self.RSroi.maxBounds = self.real_space_limit
 
         self.RSroi.setSize([ii//4 for ii in self.scan_dimensions])
-        self.DProi.setSize([ii // 4 for ii in self.frame_dimensions])
+        self.DProi.setSize([ii//4 for ii in self.frame_dimensions])
 
-        self.RSroi.setPos([1, 1])
-        self.DProi.setPos([1, 1])
+        self.RSroi.setPos([0, 0])
+        self.DProi.setPos([0, 0])
 
         self.update_real()
         self.update_diffr()
 
         self.statusBar.showMessage('loaded {}'.format(fPath.name))
 
-    def update_diffr(self):
+    def update_diffr_stempy(self):
         """ Update the diffraction space image by summing in real space
         """
         self.dp = self.sa[int(self.RSroi.pos().y()):int(self.RSroi.pos().y() + self.RSroi.size().y()) + 1,
@@ -209,16 +236,102 @@ class fourD(QWidget):
         else:
             self.diffraction_pattern_imageview.setImage(self.dp, autoRange=True)
 
-    def update_real(self):
+    def update_diffr_jit(self):
+        self.dp[:] = self.getDenseFrame_jit(
+            self.fr_full_3d[int(self.RSroi.pos().y()):int(self.RSroi.pos().y() + self.RSroi.size().y()) + 1,
+                            int(self.RSroi.pos().x()):int(self.RSroi.pos().x() + self.RSroi.size().x()) + 1, :],
+            self.frame_dimensions)
+
+        im = self.dp.reshape(self.frame_dimensions)
+        if self.log_diffraction:
+            self.diffraction_pattern_imageview.setImage(np.log(im + 1), autoRange=True)
+        else:
+            self.diffraction_pattern_imageview.setImage(im, autoRange=True)
+
+    def update_real_stempy(self):
         """ Update the real space image by summing in diffraction space
         """
-        # print('{}, {}'.format(self.DProi.pos().x(),self.DProi.pos().y()))
-        # print('{}, {}'.format(self.DProi.size().x(),self.DProi.size().y()))
-        # print('sa = {}'.format(self.sa.shape))
-        self.rs = self.sa[:, :, int(self.DProi.pos().y()) - 1:int(self.DProi.pos().y() + self.DProi.size().y()) + 0,
-                                int(self.DProi.pos().x()) - 1:int(self.DProi.pos().x() + self.DProi.size().x()) + 0]
+        self.rs = self.sa[:, :,
+                          int(self.DProi.pos().y()) - 1:int(self.DProi.pos().y() + self.DProi.size().y()) + 0,
+                          int(self.DProi.pos().x()) - 1:int(self.DProi.pos().x() + self.DProi.size().x()) + 0]
         self.rs = self.rs.sum(axis=(2, 3))
         self.real_space_imageview.setImage(self.rs, autoRange=True)
+
+    def update_real_jit(self):
+        self.rs[:] = self.getImage_jit(self.fr_rows, self.fr_cols,
+                                       int(self.DProi.pos().y()) - 1,
+                                       int(self.DProi.pos().y() + self.DProi.size().y()) + 0,
+                                       int(self.DProi.pos().x()) - 1,
+                                       int(self.DProi.pos().x() + self.DProi.size().x()) + 0)
+        im = self.rs.reshape(self.scan_dimensions)
+        self.real_space_imageview.setImage(im, autoRange=True)
+
+    @staticmethod
+    @jit(nopython=True, nogil=True, parallel=True)
+    def getImage_jit(rows, cols, left, right, bot, top):
+        """ Sum number of electron strikes within a square box
+        significant speed up using numba.jit compilation.
+
+        Parameters
+        ----------
+        rows : 2D ndarray, (M, N)
+            The row of the electron strike location. Floor divide by 576. M is
+            the raveled scan_dimensions axis and N is the zero-padded electron
+            strike position location.
+        cols : 2D ndarray, (M, N)
+            The column of the electron strike locations. Modulo divide by 576
+        left, right, bot, top : int
+            The locations of the edges of the boxes
+
+        Returns
+        -------
+        : ndarray, 2D
+            An image composed of the number of electrons for each scan position summed within the boxed region in
+        diffraction space.
+
+        """
+        im = np.zeros(rows.shape[0], dtype=np.uint32)
+
+        for ii in range(rows.shape[0]):
+            kk = 0
+            for jj in range(rows.shape[1]):
+                t1 = rows[ii, jj] > left
+                t2 = rows[ii, jj] < right
+                t3 = cols[ii, jj] > bot
+                t4 = cols[ii, jj] < top
+                t5 = t1 * t2 * t3 * t4
+                if t5:
+                    kk += 1
+            im[ii] = kk
+        return im
+
+    @staticmethod
+    @jit(nopython=True, nogil=True, parallel=True)
+    def getDenseFrame_jit(frames, frame_dimensions):
+        """ Get a frame summed from the 3D array.
+
+        Parameters
+        ----------
+        frames : 3D ndarray, (M, N, K)
+            A set of sparse frames to sum. Each entry is used as the strike location of an electron. T
+        frame_dimensions : tuple
+            The size of the frame
+
+        Returns
+        -------
+        : ndarray, 2D
+        An image composed of the number of electrons in each detector pixel.
+
+
+        """
+        dp = np.zeros((frame_dimensions[0] * frame_dimensions[1]), np.uint32)
+        for ii in range(frames.shape[0]):
+            for jj in range(frames.shape[1]):
+                for kk in range(frames.shape[2]):
+                    pos = frames[ii, jj, kk]
+                    if pos > 0:
+                        dp[pos] += 1
+        return dp
 
 
 def open_file():
