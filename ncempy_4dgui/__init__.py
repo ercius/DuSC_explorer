@@ -155,10 +155,10 @@ class fourD(QWidget):
         # Hard coded metadata
         mag = 110  # camera length in mm
         lamda = 1.9687576525122874e-12
-        pixel_size = 10e-6 # micron
+        pixel_size = 10e-6  # micron
 
         im = self.dp.reshape(self.frame_dimensions)
-        print(im.dtype)
+
         if self.dp.dtype == np.uint16:
             dtype = 'unsigned_short'
         elif im.dtype == np.uint32:
