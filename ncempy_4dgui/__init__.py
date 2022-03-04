@@ -131,13 +131,15 @@ class fourD(QWidget):
         else:
             return
 
-        #if out_path.suffix != '.tif':
-        #    out_path = out_path.with_suffix('.tif')
 
         # Get the data and change to float
         if action.text() == 'Export diffraction (TIF)':
+            if out_path.suffix != '.tif':
+                out_path = out_path.with_suffix('.tif')
             imsave(out_path, self.dp.reshape(self.frame_dimensions).astype(np.float32))
         elif action.text() == 'Export diffraction (SMV)':
+            if out_path.suffix != '.img':
+                out_path = out_path.with_suffix('.img')
             self._write_smv(out_path)
         elif action.text() == 'Export real (TIF)':
             imsave(out_path, self.rs.reshape(self.scan_dimensions).astype(np.float32))
