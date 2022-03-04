@@ -158,13 +158,17 @@ class fourD(QWidget):
         pixel_size = 10e-6  # micron
 
         im = self.dp.reshape(self.frame_dimensions)
+        if im.max() > 65535:
+            print('warning. Loss of dynamic range due to conversion from 32 bit to 16 bit')
+        im = im.astype(np.uint16)
+        dtype = 'unsigned_short'
 
-        if self.dp.dtype == np.uint16:
-            dtype = 'unsigned_short'
-        elif im.dtype == np.uint32:
-            dtype = 'unsigned_long'
-        else:
-            raise TypeError('Unsupported dtype: {}'.format(im.dtype))
+        #if self.dp.dtype == np.uint16:
+        #    dtype = 'unsigned_short'
+        #elif im.dtype == np.uint32:
+        #    dtype = 'unsigned_long'
+        #else:
+        #    raise TypeError('Unsupported dtype: {}'.format(im.dtype))
 
         # Write 512 bytes of zeros
         with open(out_path, 'wb') as f0:
