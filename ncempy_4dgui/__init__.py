@@ -75,10 +75,13 @@ class fourD(QWidget):
         open_action = QAction('Open', self)
         open_action.triggered.connect(self.open_file)
         menu_bar_file.addAction(open_action)
-        export_diff_action = QAction('Export diffraction', self)
-        export_diff_action.triggered.connect(self._on_export)
-        menu_bar_export.addAction(export_diff_action)
-        export_real_action = QAction('Export real', self)
+        export_diff_tif_action = QAction('Export diffraction (TIF)', self)
+        export_diff_tif_action.triggered.connect(self._on_export)
+        menu_bar_export.addAction(export_diff_tif_action)
+        export_diff_smv_action = QAction('Export diffraction (SMV)', self)
+        export_diff_smv_action.triggered.connect(self._on_export)
+        menu_bar_export.addAction(export_diff_smv_action)
+        export_real_action = QAction('Export real (TIF)', self)
         export_real_action.triggered.connect(self._on_export)
         menu_bar_export.addAction(export_real_action)
         toggle_log_action = QAction('Toggle log(diffraction)', self)
@@ -109,32 +112,97 @@ class fourD(QWidget):
         self.diffraction_space_roi.sigRegionChanged.connect(self.update_real)
 
     def _on_export(self):
-        """Export the shown diffraction pattern as raw data"""
+        """Export the shown diffraction pattern as raw data in TIF file format"""
         action = self.sender()
 
         # Get a file path to save to in current directory
         fd = pg.FileDialog()
-        fd.setNameFilter("TIF (*.tif)")
+        if 'TIF' in action.text():
+            fd.setNameFilter("TIF (*.tif)")
+        elif 'SMV' in action.text():
+            fd.setNameFilter("IMG (*.IMG)")
         fd.setDirectory(str(self.current_dir))
         fd.setFileMode(pg.FileDialog.AnyFile)
         fd.setAcceptMode(pg.FileDialog.AcceptSave)
 
         if fd.exec_():
             file_name = fd.selectedFiles()[0]
-            outPath = Path(file_name)
+            out_path = Path(file_name)
         else:
             return
 
-        if outPath.suffix != '.tif':
-            outPath = outPath.with_suffix('.tif')
 
         # Get the data and change to float
-        if action.text() == 'Export diffraction':
-            imsave(outPath, self.dp.astype(np.float32))
-        elif action.text() == 'Export real':
-            imsave(outPath, self.rs.astype(np.float32))
+        if action.text() == 'Export diffraction (TIF)':
+            if out_path.suffix != '.tif':
+                out_path = out_path.with_suffix('.tif')
+            imsave(out_path, self.dp.reshape(self.frame_dimensions).astype(np.float32))
+        elif action.text() == 'Export diffraction (SMV)':
+            if out_path.suffix != '.img':
+                out_path = out_path.with_suffix('.img')
+            self._write_smv(out_path)
+        elif action.text() == 'Export real (TIF)':
+            imsave(out_path, self.rs.reshape(self.scan_dimensions).astype(np.float32))
         else:
             print('Export: unknown action {}'.format(action.text()))
+
+    def _write_smv(self, out_path):
+        """Write out diffraction as SMV formatted file
+        Header is 512 bytes of zeros and then filled with ASCII
+
+        camera length, wavelength, and pixel_size are hard coded.
+        """
+        # Hard coded metadata
+        mag = 110  # camera length in mm
+        lamda = 1.9687576525122874e-12
+        pixel_size = 10e-6  # micron
+
+        im = self.dp.reshape(self.frame_dimensions)
+        if im.max() > 65535:
+            im[im > 65535] = 65535  # maximum 16 bit value allowed
+            im[im < 0] = 0  # just in case
+            print('warning. Loss of dynamic range due to conversion from 32 bit to 16 bit')
+        im = im.astype(np.uint16)
+        dtype = 'unsigned_short'
+
+        #if self.dp.dtype == np.uint16:
+        #    dtype = 'unsigned_short'
+        #elif im.dtype == np.uint32:
+        #    dtype = 'unsigned_long'
+        #else:
+        #    raise TypeError('Unsupported dtype: {}'.format(im.dtype))
+
+        # Write 512 bytes of zeros
+        with open(out_path, 'wb') as f0:
+            f0.write(np.zeros(512, dtype=np.uint8))
+        # Write the header over the zeros as needed
+        with open(out_path, 'r+') as f0:
+            f0.write("{\nHEADER_BYTES=512;\n")
+            f0.write("DIM=2;\n")
+            f0.write("BYTE_ORDER=little_endian;\n")
+            f0.write(f"TYPE={dtype};\n")
+            f0.write(f"SIZE1={im.shape[1]};\n")  # size1 is columns
+            f0.write(f"SIZE2={im.shape[0]};\n")  # size 2 is rows
+            f0.write(f"PIXEL_SIZE={pixel_size};\n") # physical pixel size in micron
+            f0.write(f"WAVELENGTH={lamda};\n") # wavelength
+            if mag:
+                f0.write(f"DISTANCE={int(mag)};\n")
+            f0.write("PHI=0.0;\n")
+            f0.write("BEAM_CENTER_X=1.0;\n")
+            f0.write("BEAM_CENTER_Y=1.0;\n")
+            f0.write("BIN=1x1;\n")
+            f0.write("DATE=Thu Oct 21 23:06:09 2021;\n")
+            f0.write("DETECTOR_SN=unknown;\n")
+            f0.write("OSC_RANGE=1.0;\n")
+            f0.write("OSC_START=0;\n")
+            f0.write("IMAGE_PEDESTAL=0;\n")
+            f0.write("TIME=10.0;\n")
+            f0.write("TWOTHETA=0;\n")
+            f0.write("}\n")
+        # Append the binary image data at the end of the header
+        with open(out_path, 'rb+') as f0:
+            f0.seek(512, 0)
+            f0.write(im)
 
     def _on_log(self):
         self.log_diffraction = not self.log_diffraction
