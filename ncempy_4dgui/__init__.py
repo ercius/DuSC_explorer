@@ -159,6 +159,8 @@ class fourD(QWidget):
 
         im = self.dp.reshape(self.frame_dimensions)
         if im.max() > 65535:
+            im[im > 65535] = 65535  # maximum 16 bit value allowed
+            im[im < 0] = 0  # just in case
             print('warning. Loss of dynamic range due to conversion from 32 bit to 16 bit')
         im = im.astype(np.uint16)
         dtype = 'unsigned_short'
