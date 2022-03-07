@@ -37,6 +37,10 @@ class fourD(QWidget):
         self.rs = None
         self.log_diffraction = True
 
+        self.available_colormaps = ['thermal', 'flame', 'yellowy', 'bipolar', 'spectrum', 'cyclic', 'greyclip', 'grey',
+                                    'viridis', 'inferno', 'plasma', 'magma']
+        self.colormap = 'viridis'
+
         super(fourD, self).__init__(*args, *kwargs)
         self.setWindowTitle("Stempy: Sparse 4D Data Explorer")
         self.setWindowIcon(QtGui.QIcon('MF_logo_only_small.ico'))
@@ -51,18 +55,22 @@ class fourD(QWidget):
         self.view = self.graphics.addViewBox(row=0, col=0, invertY=True)
         self.view2 = self.graphics.addViewBox(row=0, col=1, invertY=True)
 
-        self.real_space_imageview = pg.ImageItem(border=pg.mkPen('w'))
-        self.view.addItem(self.real_space_imageview)
-        self.real_space_imageview.setImage(np.zeros((100, 100), dtype=np.uint32))
+        self.real_space_image_item = pg.ImageItem(border=pg.mkPen('w'))
+        self.r_image_view = pg.ImageView(imageItem=self.real_space_image_item)
+        self.view.addItem(self.real_space_image_item)
+        self.real_space_image_item.setImage(np.zeros((100, 100), dtype=np.uint32))
         self.view.setAspectLocked()
+        self.r_image_view.setPredefinedGradient('viridis')
 
         self.diffraction_pattern_imageview = pg.ImageItem(border=pg.mkPen('w'))
+        self.d_image_view = pg.ImageView(imageItem=self.diffraction_pattern_imageview)
         self.view2.addItem(self.diffraction_pattern_imageview)
         self.diffraction_pattern_imageview.setImage(np.zeros((100, 100), dtype=np.uint32))
         self.view2.setAspectLocked()
+        self.d_image_view.setPredefinedGradient('viridis')
 
         self.diffraction_pattern_imageview.setOpts(axisOrder="row-major")
-        self.real_space_imageview.setOpts(axisOrder="row-major")
+        self.real_space_image_item.setOpts(axisOrder="row-major")
 
         self.statusBar = QStatusBar()
         self.statusBar.showMessage("Starting up...")
@@ -72,6 +80,7 @@ class fourD(QWidget):
         menu_bar_file = self.myQMenuBar.addMenu('File')
         menu_bar_export = self.myQMenuBar.addMenu('Export')
         menu_bar_display = self.myQMenuBar.addMenu('Display')
+        display_colormap = menu_bar_display.addMenu('Set colormap')
         open_action = QAction('Open', self)
         open_action.triggered.connect(self.open_file)
         menu_bar_file.addAction(open_action)
@@ -87,6 +96,12 @@ class fourD(QWidget):
         toggle_log_action = QAction('Toggle log(diffraction)', self)
         toggle_log_action.triggered.connect(self._on_log)
         menu_bar_display.addAction(toggle_log_action)
+
+        self.cm_actions = {}
+        for cm in self.available_colormaps:
+            self.cm_actions[cm] = QAction(cm, self)
+            self.cm_actions[cm].triggered.connect(self._on_use_colormap)
+            display_colormap.addAction(self.cm_actions[cm])
 
         self.setLayout(QVBoxLayout())
         self.layout().addWidget(self.myQMenuBar)
@@ -110,6 +125,11 @@ class fourD(QWidget):
 
         self.real_space_roi.sigRegionChanged.connect(self.update_diffr)
         self.diffraction_space_roi.sigRegionChanged.connect(self.update_real)
+
+    def _on_use_colormap(self):
+        action = self.sender()
+        self.d_image_view.setPredefinedGradient(action.text())
+        self.r_image_view.setPredefinedGradient(action.text())
 
     def _on_export(self):
         """Export the shown diffraction pattern as raw data in TIF file format"""
@@ -323,7 +343,7 @@ class fourD(QWidget):
                   int(self.diffraction_space_roi.pos().y()) - 1:int(self.diffraction_space_roi.pos().y() + self.diffraction_space_roi.size().y()) + 0,
                   int(self.diffraction_space_roi.pos().x()) - 1:int(self.diffraction_space_roi.pos().x() + self.diffraction_space_roi.size().x()) + 0]
         self.rs = self.rs.sum(axis=(2, 3))
-        self.real_space_imageview.setImage(self.rs, autoRange=True)
+        self.real_space_image_item.setImage(self.rs, autoRange=True)
 
     def update_real_jit(self):
         self.rs[:] = self.getImage_jit(self.fr_rows, self.fr_cols,
@@ -332,7 +352,7 @@ class fourD(QWidget):
                                        int(self.diffraction_space_roi.pos().x()) - 1,
                                        int(self.diffraction_space_roi.pos().x() + self.diffraction_space_roi.size().x()) + 0)
         im = self.rs.reshape(self.scan_dimensions)
-        self.real_space_imageview.setImage(im, autoRange=True)
+        self.real_space_image_item.setImage(im, autoRange=True)
 
     @staticmethod
     @jit(nopython=True, nogil=True, parallel=True)
