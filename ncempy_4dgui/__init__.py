@@ -56,18 +56,18 @@ class fourD(QWidget):
         self.view2 = self.graphics.addViewBox(row=0, col=1, invertY=True)
 
         self.real_space_image_item = pg.ImageItem(border=pg.mkPen('w'))
-        self.r_image_view = pg.ImageView(imageItem=self.real_space_image_item)
+        self.real_space_image_view = pg.ImageView(imageItem=self.real_space_image_item)
         self.view.addItem(self.real_space_image_item)
         self.real_space_image_item.setImage(np.zeros((100, 100), dtype=np.uint32))
         self.view.setAspectLocked()
-        self.r_image_view.setPredefinedGradient('viridis')
+        self.real_space_image_view.setPredefinedGradient('viridis')
 
         self.diffraction_pattern_imageview = pg.ImageItem(border=pg.mkPen('w'))
-        self.d_image_view = pg.ImageView(imageItem=self.diffraction_pattern_imageview)
+        self.diffraction_space_image_view = pg.ImageView(imageItem=self.diffraction_pattern_imageview)
         self.view2.addItem(self.diffraction_pattern_imageview)
         self.diffraction_pattern_imageview.setImage(np.zeros((100, 100), dtype=np.uint32))
         self.view2.setAspectLocked()
-        self.d_image_view.setPredefinedGradient('viridis')
+        self.diffraction_space_image_view.setPredefinedGradient('viridis')
 
         self.diffraction_pattern_imageview.setOpts(axisOrder="row-major")
         self.real_space_image_item.setOpts(axisOrder="row-major")
@@ -128,8 +128,8 @@ class fourD(QWidget):
 
     def _on_use_colormap(self):
         action = self.sender()
-        self.d_image_view.setPredefinedGradient(action.text())
-        self.r_image_view.setPredefinedGradient(action.text())
+        self.diffraction_space_image_view.setPredefinedGradient(action.text())
+        self.real_space_image_view.setPredefinedGradient(action.text())
 
     def _on_export(self):
         """Export the shown diffraction pattern as raw data in TIF file format"""
