@@ -14,6 +14,14 @@ Clone the repository and install from source using
 
 from the source directory.
 
+=============
+Compatibility
+=============
+
+This program requires pyqtgraph 0.11. You may also need to install different versions of QT depending on your
+operating system. Python 3.9 and PyQt6 have been tested to work as specified in the table on the [pyqtgaph
+Github README] (https://github.com/pyqtgraph/pyqtgraph#qt-bindings-test-matrix)
+
 ===============
 Running the GUI
 ===============
