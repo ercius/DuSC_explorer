@@ -125,6 +125,16 @@ class fourD(QWidget):
 
         self.real_space_roi.sigRegionChanged.connect(self.update_diffr)
         self.diffraction_space_roi.sigRegionChanged.connect(self.update_real)
+        self.real_space_roi.sigRegionChanged.connect(self._update_position_message)
+        self.diffraction_space_roi.sigRegionChanged.connect(self._update_position_message)
+
+    def _update_position_message(self):
+        self.statusBar.showMessage(
+            f'Real: ({int(self.real_space_roi.pos().y())}, {int(self.real_space_roi.pos().x())}), '
+            f'({int(self.real_space_roi.size().y())}, {int(self.real_space_roi.size().x())}); '
+            f'Diffraction: ({int(self.diffraction_space_roi.pos().y())}, {int(self.diffraction_space_roi.pos().x())}), '
+            f'({int(self.diffraction_space_roi.size().y())}, {int(self.diffraction_space_roi.size().x())})'
+        )
 
     def _on_use_colormap(self):
         action = self.sender()
@@ -150,7 +160,6 @@ class fourD(QWidget):
             out_path = Path(file_name)
         else:
             return
-
 
         # Get the data and change to float
         if action.text() == 'Export diffraction (TIF)':
