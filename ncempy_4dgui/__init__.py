@@ -10,6 +10,7 @@ import pyqtgraph as pg
 import numpy as np
 from tifffile import imsave
 from numba import jit
+from numba.types.containers import UniTuple
 import stempy.io as stio
 
 from qtpy.QtWidgets import *
@@ -288,7 +289,7 @@ class fourD(QWidget):
                 mm = ev.shape[0]
         print('non-ragged array shape: {}'.format((self.sa.data.ravel().shape[0], mm)))
 
-        self.fr_full = np.zeros((self.sa.data.ravel().shape[0], mm), dtype=self.sa.data[0].dtype)
+        self.fr_full = np.zeros((self.sa.data.ravel().shape[0], mm), dtype=self.sa.data[0][0].dtype)
         for ii, ev in enumerate(self.sa.data.ravel()):
             self.fr_full[ii, :ev.shape[0]] = ev
         self.fr_full_3d = self.fr_full.reshape((*self.scan_dimensions, self.fr_full.shape[1]))
@@ -364,7 +365,7 @@ class fourD(QWidget):
         self.real_space_image_item.setImage(im, autoRange=True)
 
     @staticmethod
-    @jit(nopython=True, nogil=True, parallel=True)
+    @jit(["uint32[:](uint32[:,:], uint32[:,:], int64, int64, int64, int64)"], nopython=True, nogil=True, parallel=True)
     def getImage_jit(rows, cols, left, right, bot, top):
         """ Sum number of electron strikes within a square box
         significant speed up using numba.jit compilation.
@@ -387,6 +388,7 @@ class fourD(QWidget):
         diffraction space.
 
         """
+        
         im = np.zeros(rows.shape[0], dtype=np.uint32)
 
         for ii in range(rows.shape[0]):
@@ -404,6 +406,7 @@ class fourD(QWidget):
 
     @staticmethod
     @jit(nopython=True, nogil=True, parallel=True)
+    #@jit(["uint32[:](uint32[:,:,:], UniTuple(int64, 2))"], nopython=True, nogil=True, parallel=True)
     def getDenseFrame_jit(frames, frame_dimensions):
         """ Get a frame summed from the 3D array.
 
@@ -435,9 +438,9 @@ def open_file():
     """Start the graphical user interface by opening a file. This is used from a python interpreter."""
     main()
 
-
 def main():
     """Main function used to start the GUI."""
+    
     qapp = QApplication([])
     fourD_view = fourD()
     fourD_view.show()
