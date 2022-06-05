@@ -30,6 +30,7 @@ class fourD(QWidget):
         self.center = (287, 287)
         self.scan_dimensions = (0, 0)
         self.frame_dimensions = (576, 576)
+        self.num_frames_per_scan = None
         self.fr_full = None
         self.fr_full_3d = None
         self.fr_rows = None
@@ -278,6 +279,7 @@ class fourD(QWidget):
         self.sa.allow_full_expand = True
         self.scan_dimensions = self.sa.scan_shape
         self.frame_dimensions = self.sa.frame_shape
+        self.num_frames_per_scan = self.sa.num_frames_per_scan
         print('scan dimensions = {}'.format(self.scan_dimensions))
 
         # Pre-calculate to speed things up
