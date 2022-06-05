@@ -260,7 +260,7 @@ class fourD(QWidget):
 
     def setData(self, fPath):
         """ Load the data from the HDF5 file. Must be in
-        the format output by stempy.io.save_electron_data().
+        the format output by stempy.io.write_to_hdf5().
 
         Parameters
         ----------
@@ -433,7 +433,100 @@ class fourD(QWidget):
                         dp[pos] += 1
         return dp
 
+class fourD_gpu(fourD):
+    def __init__(self, *args, **kwargs):
+        import cupy as cp
+        super().__init()
+        
+        self.get_image_cupy_3 = cp.ElementwiseKernel(
+                                'uint32 fr_full, int32 left, int32 right, int32 bot, int32 top',
+                                'uint32 out',
+                                'out = ((fr_full % 576) > bot) * ((fr_full % 576) < top) * ((fr_full % 576) > bot) * ((fr_full % 576) < top)',
+                                'get_image_cupy_2')
+        # Set the update strategy to the GPU version
+        self.update_real = self.update_real_gpu
+        self.update_diffr = self.update_diffr_gpu
+        
+    def setData(self, fPath):
+        """ Load the data from the HDF5 file. Must be in
+        the format output by stempy.io.write_to_hdf5().
 
+        Parameters
+        ----------
+        fPath : pathlib.Path
+            The path of to the file to load.
+        """
+        self.statusBar.showMessage("Loading the sparse data...")
+
+        # Temporary: remove "full expansion" warning
+        stio.sparse_array._warning = self.temp
+
+        # Load data as a SparseArray class
+        self.sa = stio.SparseArray.from_hdf5(str(fPath))
+
+        self.sa.allow_full_expand = True
+        self.scan_dimensions = self.sa.scan_shape
+        self.frame_dimensions = self.sa.frame_shape
+        print('scan dimensions = {}'.format(self.scan_dimensions))
+
+        # Create a non-ragged array with zero padding
+        self.statusBar.showMessage("Converting the data...")
+        # Create non-ragged array and load onto GPU
+        _ = np.zeros((sa.data.ravel().shape[0], mm), dtype=sa.data[0][0].dtype)
+        for ii, ev in enumerate(sa.data.ravel()):
+            _[ii, :ev.shape[0]] = ev
+        fr_full = cp.asarray(_)
+        del _
+        
+        self.fr_full = np.zeros((self.sa.data.ravel().shape[0], mm), dtype=self.sa.data[0][0].dtype)
+        for ii, ev in enumerate(self.sa.data.ravel()):
+            self.fr_full[ii, :ev.shape[0]] = ev
+        self.fr_full_3d = self.fr_full.reshape((*self.scan_dimensions, self.fr_full.shape[1]))
+
+        # del frames
+
+        print('non-ragged array size = {} GB'.format(self.fr_full.nbytes / 1e9))
+
+        # Find the row and col for each electron strike
+#         self.fr_rows = self.fr_full // 576
+#         self.fr_cols = self.fr_full % 576
+
+        self.dp = np.zeros(self.frame_dimensions[0] * self.frame_dimensions[1], np.uint32)
+        self.rs = np.zeros(self.scan_dimensions[0] * self.scan_dimensions[1], np.uint32)
+
+        self.diffraction_pattern_limit = QRectF(0, 0, self.frame_dimensions[1], self.frame_dimensions[0])
+        self.diffraction_space_roi.maxBounds = self.diffraction_pattern_limit
+
+        self.real_space_limit = QRectF(0, 0, self.scan_dimensions[1], self.scan_dimensions[0])
+        self.real_space_roi.maxBounds = self.real_space_limit
+
+        self.real_space_roi.setSize([ii // 4 for ii in self.scan_dimensions])
+        self.diffraction_space_roi.setSize([ii // 4 for ii in self.frame_dimensions])
+
+        self.real_space_roi.setPos([0, 0])
+        self.diffraction_space_roi.setPos([0, 0])
+
+        self.update_real()
+        self.update_diffr()
+
+        self.statusBar.showMessage('loaded {}'.format(fPath.name))
+    
+    def update_real_gpu(self):
+        self.rs[:] = self.getImage_gpu(self.fr_full,
+                                       int(self.diffraction_space_roi.pos().y()) - 1,
+                                       int(self.diffraction_space_roi.pos().y() + self.diffraction_space_roi.size().y()) + 0,
+                                       int(self.diffraction_space_roi.pos().x()) - 1,
+                                       int(self.diffraction_space_roi.pos().x() + self.diffraction_space_roi.size().x()) + 0)
+        im = self.rs.reshape(self.scan_dimensions)
+        self.real_space_image_item.setImage(im, autoRange=True)
+    
+    def getImage_gpu(self,fr_full, left, right, bot, top):
+        # Calculate everything in the scame kernel
+        r5 = self.get_image_cupy_3(fr_full, left, right, bot, top)
+        r6 = r5.sum(axis=1)
+        del r5, r6 # avoid out of memory issues
+        return r6.get()
+    
 def open_file():
     """Start the graphical user interface by opening a file. This is used from a python interpreter."""
     main()
