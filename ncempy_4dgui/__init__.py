@@ -303,6 +303,7 @@ class fourD(QWidget):
         # Find the row and col for each electron strike
         self.fr_rows = self.fr_full // 576
         self.fr_cols = self.fr_full % 576
+        print(self.fr_rows.shape)
 
         self.dp = np.zeros(self.frame_dimensions[0] * self.frame_dimensions[1], np.uint32)
         self.rs = np.zeros(self.scan_dimensions[0] * self.scan_dimensions[1], np.uint32)
@@ -321,7 +322,7 @@ class fourD(QWidget):
 
         self.update_real()
         self.update_diffr()
-
+                
         self.statusBar.showMessage('loaded {}'.format(fPath.name))
 
     def update_diffr_stempy(self):
@@ -358,7 +359,6 @@ class fourD(QWidget):
         self.real_space_image_item.setImage(self.rs, autoRange=True)
 
     def update_real_jit(self):
-        print(self.fr_rows.shape)
         self.rs[:] = self.getImage_jit(self.fr_rows, self.fr_cols,
                                        int(self.diffraction_space_roi.pos().y()) - 1,
                                        int(self.diffraction_space_roi.pos().y() + self.diffraction_space_roi.size().y()) + 0,
@@ -397,15 +397,14 @@ class fourD(QWidget):
         for ii in range(rows.shape[0]):
             kk = 0
             for jj in range(rows.shape[1]):
-                for ll in range(rows.shape[2]):
-                    t1 = rows[ii, jj, ll] > left
-                    t2 = rows[ii, jj, ll] < right
-                    t3 = cols[ii, jj, ll] > bot
-                    t4 = cols[ii, jj, ll] < top
-                    t5 = t1 * t2 * t3 * t4
-                    if t5:
-                        kk += 1
-                im[ii] = kk
+                t1 = rows[ii, jj, ll] > left
+                t2 = rows[ii, jj, ll] < right
+                t3 = cols[ii, jj, ll] > bot
+                t4 = cols[ii, jj, ll] < top
+                t5 = t1 * t2 * t3 * t4
+                if t5:
+                    kk += 1
+            im[ii] = kk
         return im
 
     @staticmethod
