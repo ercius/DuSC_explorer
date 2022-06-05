@@ -301,7 +301,7 @@ class fourD(QWidget):
         # Find the row and col for each electron strike
         self.fr_rows = (self.fr_full // 576).reshape(self.scan_dimensions[0] * self.scan_dimensions[1], self.num_frames_per_scan, mm)
         self.fr_cols = (self.fr_full  % 576).reshape(self.scan_dimensions[0] * self.scan_dimensions[1], self.num_frames_per_scan, mm)
-        print(self.fr_rows.shape)
+
         self.dp = np.zeros(self.frame_dimensions[0] * self.frame_dimensions[1], np.uint32)
         self.rs = np.zeros(self.scan_dimensions[0] * self.scan_dimensions[1], np.uint32)
 
@@ -314,8 +314,8 @@ class fourD(QWidget):
         self.real_space_roi.setSize([ii // 4 for ii in self.scan_dimensions])
         self.diffraction_space_roi.setSize([ii // 4 for ii in self.frame_dimensions])
 
-        self.real_space_roi.setPos([0, 0])
-        self.diffraction_space_roi.setPos([0, 0])
+        self.real_space_roi.setPos([ii // 4 + ii //8 for ii in self.scan_dimensions])
+        self.diffraction_space_roi.setPos([ii // 4 + ii // 8 for ii in self.frame_dimensions])
 
         self.update_real()
         self.update_diffr()
@@ -356,7 +356,6 @@ class fourD(QWidget):
         self.real_space_image_item.setImage(self.rs, autoRange=True)
 
     def update_real_jit(self):
-        print(self.fr_rows.shape)
         self.rs[:] = self.getImage_jit(self.fr_rows, self.fr_cols,
                                        int(self.diffraction_space_roi.pos().y()) - 1,
                                        int(self.diffraction_space_roi.pos().y() + self.diffraction_space_roi.size().y()) + 0,
@@ -364,7 +363,7 @@ class fourD(QWidget):
                                        int(self.diffraction_space_roi.pos().x() + self.diffraction_space_roi.size().x()) + 0)
         im = self.rs.reshape(self.scan_dimensions)
         self.real_space_image_item.setImage(im, autoRange=True)
-        print(im.max(), im.min())
+
     @staticmethod
     @jit(["uint32[:](uint32[:,:,:], uint32[:,:,:], int64, int64, int64, int64)"], nopython=True, nogil=True, parallel=True)
     def getImage_jit(rows, cols, left, right, bot, top):
