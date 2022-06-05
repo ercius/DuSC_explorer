@@ -30,6 +30,7 @@ class fourD(QWidget):
         self.center = (287, 287)
         self.scan_dimensions = (0, 0)
         self.frame_dimensions = (576, 576)
+        self.num_frames_per_scan = None
         self.fr_full = None
         self.fr_full_3d = None
         self.fr_rows = None
@@ -278,6 +279,7 @@ class fourD(QWidget):
         self.sa.allow_full_expand = True
         self.scan_dimensions = self.sa.scan_shape
         self.frame_dimensions = self.sa.frame_shape
+        self.num_frames_per_scan = self.sa.num_frames_per_scan
         print('scan dimensions = {}'.format(self.scan_dimensions))
 
         # Pre-calculate to speed things up
@@ -292,15 +294,13 @@ class fourD(QWidget):
         self.fr_full = np.zeros((self.sa.data.ravel().shape[0], mm), dtype=self.sa.data[0][0].dtype)
         for ii, ev in enumerate(self.sa.data.ravel()):
             self.fr_full[ii, :ev.shape[0]] = ev
-        self.fr_full_3d = self.fr_full.reshape((*self.scan_dimensions, self.fr_full.shape[1]))
-
-        # del frames
+        self.fr_full_3d = self.fr_full.reshape((*self.scan_dimensions, self.num_frames_per_scan, self.fr_full.shape[1]))
 
         print('non-ragged array size = {} GB'.format(self.fr_full.nbytes / 1e9))
 
         # Find the row and col for each electron strike
-        self.fr_rows = self.fr_full // 576
-        self.fr_cols = self.fr_full % 576
+        self.fr_rows = (self.fr_full // 576).reshape(self.scan_dimensions[0] * self.scan_dimensions[1], self.num_frames_per_scan, mm)
+        self.fr_cols = (self.fr_full  % 576).reshape(self.scan_dimensions[0] * self.scan_dimensions[1], self.num_frames_per_scan, mm)
 
         self.dp = np.zeros(self.frame_dimensions[0] * self.frame_dimensions[1], np.uint32)
         self.rs = np.zeros(self.scan_dimensions[0] * self.scan_dimensions[1], np.uint32)
@@ -314,12 +314,12 @@ class fourD(QWidget):
         self.real_space_roi.setSize([ii // 4 for ii in self.scan_dimensions])
         self.diffraction_space_roi.setSize([ii // 4 for ii in self.frame_dimensions])
 
-        self.real_space_roi.setPos([0, 0])
-        self.diffraction_space_roi.setPos([0, 0])
+        self.real_space_roi.setPos([ii // 4 + ii //8 for ii in self.scan_dimensions])
+        self.diffraction_space_roi.setPos([ii // 4 + ii // 8 for ii in self.frame_dimensions])
 
         self.update_real()
         self.update_diffr()
-
+                
         self.statusBar.showMessage('loaded {}'.format(fPath.name))
 
     def update_diffr_stempy(self):
@@ -337,7 +337,7 @@ class fourD(QWidget):
     def update_diffr_jit(self):
         self.dp[:] = self.getDenseFrame_jit(
             self.fr_full_3d[int(self.real_space_roi.pos().y()):int(self.real_space_roi.pos().y() + self.real_space_roi.size().y()) + 1,
-            int(self.real_space_roi.pos().x()):int(self.real_space_roi.pos().x() + self.real_space_roi.size().x()) + 1, :],
+            int(self.real_space_roi.pos().x()):int(self.real_space_roi.pos().x() + self.real_space_roi.size().x()) + 1, :, :],
             self.frame_dimensions)
 
         im = self.dp.reshape(self.frame_dimensions)
@@ -365,55 +365,58 @@ class fourD(QWidget):
         self.real_space_image_item.setImage(im, autoRange=True)
 
     @staticmethod
-    @jit(["uint32[:](uint32[:,:], uint32[:,:], int64, int64, int64, int64)"], nopython=True, nogil=True, parallel=True)
+    @jit(["uint32[:](uint32[:,:,:], uint32[:,:,:], int64, int64, int64, int64)"], nopython=True, nogil=True, parallel=True)
     def getImage_jit(rows, cols, left, right, bot, top):
         """ Sum number of electron strikes within a square box
         significant speed up using numba.jit compilation.
 
         Parameters
         ----------
-        rows : 2D ndarray, (M, N)
+        rows : 2D ndarray, (M, num_frames, N)
             The row of the electron strike location. Floor divide by 576. M is
             the raveled scan_dimensions axis and N is the zero-padded electron
             strike position location.
-        cols : 2D ndarray, (M, N)
+        cols : 2D ndarray, (M, num_frames, N)
             The column of the electron strike locations. Modulo divide by 576
         left, right, bot, top : int
             The locations of the edges of the boxes
 
         Returns
         -------
-        : ndarray, 2D
+        : ndarray, 1D
             An image composed of the number of electrons for each scan position summed within the boxed region in
         diffraction space.
 
         """
         
         im = np.zeros(rows.shape[0], dtype=np.uint32)
-
-        for ii in range(rows.shape[0]):
-            kk = 0
+        
+        # For each scan position (ii) sum all events (kk) in each frame (jj)
+        for ii in range(im.shape[0]):
+            ss = 0
             for jj in range(rows.shape[1]):
-                t1 = rows[ii, jj] > left
-                t2 = rows[ii, jj] < right
-                t3 = cols[ii, jj] > bot
-                t4 = cols[ii, jj] < top
-                t5 = t1 * t2 * t3 * t4
-                if t5:
-                    kk += 1
-            im[ii] = kk
+            	for kk in range(rows.shape[2]):
+	                t1 = rows[ii, jj, kk] > left
+	                t2 = rows[ii, jj, kk] < right
+	                t3 = cols[ii, jj, kk] > bot
+	                t4 = cols[ii, jj, kk] < top
+	                t5 = t1 * t2 * t3 * t4
+	                if t5:
+	                    ss += 1
+            im[ii] = ss
         return im
 
     @staticmethod
     @jit(nopython=True, nogil=True, parallel=True)
-    #@jit(["uint32[:](uint32[:,:,:], UniTuple(int64, 2))"], nopython=True, nogil=True, parallel=True)
+    #@jit(["uint32[:](uint32[:,:,:,:], UniTuple(int64, 2))"], nopython=True, nogil=True, parallel=True)
     def getDenseFrame_jit(frames, frame_dimensions):
         """ Get a frame summed from the 3D array.
 
         Parameters
         ----------
-        frames : 3D ndarray, (M, N, K)
-            A set of sparse frames to sum. Each entry is used as the strike location of an electron. T
+        frames : 3D ndarray, (I, J, K, L)
+            A set of sparse frames to sum. Each entry is used as the strike location of an electron. I, J, K, L
+            corresond to scan_dimension0, scan_dimension1, num_frame, event.
         frame_dimensions : tuple
             The size of the frame
 
@@ -425,12 +428,14 @@ class fourD(QWidget):
 
         """
         dp = np.zeros((frame_dimensions[0] * frame_dimensions[1]), np.uint32)
+        # nested for loop for: scan_dimension0, scan_dimension1, num_frame, event
         for ii in range(frames.shape[0]):
             for jj in range(frames.shape[1]):
                 for kk in range(frames.shape[2]):
-                    pos = frames[ii, jj, kk]
-                    if pos > 0:
-                        dp[pos] += 1
+                    for ll in range(frames.shape[3]):
+                        pos = frames[ii, jj, kk, ll]
+                        if pos > 0:
+                            dp[pos] += 1
         return dp
 
 class fourD_gpu(fourD):
