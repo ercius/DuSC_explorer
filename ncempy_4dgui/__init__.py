@@ -296,15 +296,12 @@ class fourD(QWidget):
             self.fr_full[ii, :ev.shape[0]] = ev
         self.fr_full_3d = self.fr_full.reshape((*self.scan_dimensions, self.num_frames_per_scan, self.fr_full.shape[1]))
 
-        # del frames
-
         print('non-ragged array size = {} GB'.format(self.fr_full.nbytes / 1e9))
 
         # Find the row and col for each electron strike
-        self.fr_rows = self.fr_full // 576
-        self.fr_cols = self.fr_full % 576
+        self.fr_rows = (self.fr_full // 576).reshape(self.scan_dimensions[0] * self.scan_dimensions[1], self.num_frames_per_scan, mm)
+        self.fr_cols = (self.fr_full  % 576).reshape(self.scan_dimensions[0] * self.scan_dimensions[1], self.num_frames_per_scan, mm)
         print(self.fr_rows.shape)
-
         self.dp = np.zeros(self.frame_dimensions[0] * self.frame_dimensions[1], np.uint32)
         self.rs = np.zeros(self.scan_dimensions[0] * self.scan_dimensions[1], np.uint32)
 
@@ -359,6 +356,7 @@ class fourD(QWidget):
         self.real_space_image_item.setImage(self.rs, autoRange=True)
 
     def update_real_jit(self):
+        print(self.fr_rows.shape)
         self.rs[:] = self.getImage_jit(self.fr_rows, self.fr_cols,
                                        int(self.diffraction_space_roi.pos().y()) - 1,
                                        int(self.diffraction_space_roi.pos().y() + self.diffraction_space_roi.size().y()) + 0,
@@ -366,50 +364,52 @@ class fourD(QWidget):
                                        int(self.diffraction_space_roi.pos().x() + self.diffraction_space_roi.size().x()) + 0)
         im = self.rs.reshape(self.scan_dimensions)
         self.real_space_image_item.setImage(im, autoRange=True)
-
+        print(im.max(), im.min())
     @staticmethod
-    @jit(["uint32[:](uint32[:,:], uint32[:,:], int64, int64, int64, int64)"], nopython=True, nogil=True, parallel=True)
+    @jit(["uint32[:](uint32[:,:,:], uint32[:,:,:], int64, int64, int64, int64)"], nopython=True, nogil=True, parallel=True)
     def getImage_jit(rows, cols, left, right, bot, top):
         """ Sum number of electron strikes within a square box
         significant speed up using numba.jit compilation.
 
         Parameters
         ----------
-        rows : 2D ndarray, (M, N)
+        rows : 2D ndarray, (M, num_frames, N)
             The row of the electron strike location. Floor divide by 576. M is
             the raveled scan_dimensions axis and N is the zero-padded electron
             strike position location.
-        cols : 2D ndarray, (M, N)
+        cols : 2D ndarray, (M, num_frames, N)
             The column of the electron strike locations. Modulo divide by 576
         left, right, bot, top : int
             The locations of the edges of the boxes
 
         Returns
         -------
-        : ndarray, 2D
+        : ndarray, 1D
             An image composed of the number of electrons for each scan position summed within the boxed region in
         diffraction space.
 
         """
         
         im = np.zeros(rows.shape[0], dtype=np.uint32)
-
-        for ii in range(rows.shape[0]):
-            kk = 0
+        
+        # For each scan position (ii) sum all events (kk) in each frame (jj)
+        for ii in range(im.shape[0]):
+            ss = 0
             for jj in range(rows.shape[1]):
-                t1 = rows[ii, jj] > left
-                t2 = rows[ii, jj] < right
-                t3 = cols[ii, jj] > bot
-                t4 = cols[ii, jj] < top
-                t5 = t1 * t2 * t3 * t4
-                if t5:
-                    kk += 1
-            im[ii] = kk
+            	for kk in range(rows.shape[2]):
+	                t1 = rows[ii, jj, kk] > left
+	                t2 = rows[ii, jj, kk] < right
+	                t3 = cols[ii, jj, kk] > bot
+	                t4 = cols[ii, jj, kk] < top
+	                t5 = t1 * t2 * t3 * t4
+	                if t5:
+	                    ss += 1
+            im[ii] = ss
         return im
 
     @staticmethod
     @jit(nopython=True, nogil=True, parallel=True)
-    #@jit(["uint32[:](uint32[:,:,:], UniTuple(int64, 2))"], nopython=True, nogil=True, parallel=True)
+    #@jit(["uint32[:](uint32[:,:,:,:], UniTuple(int64, 2))"], nopython=True, nogil=True, parallel=True)
     def getDenseFrame_jit(frames, frame_dimensions):
         """ Get a frame summed from the 3D array.
 
@@ -429,8 +429,8 @@ class fourD(QWidget):
 
         """
         dp = np.zeros((frame_dimensions[0] * frame_dimensions[1]), np.uint32)
-        # nested for loop for: scan_dimsnsion0, scan_dimension1, num_frame, event
-        for kk in range(frames.shape[0]):
+        # nested for loop for: scan_dimension0, scan_dimension1, num_frame, event
+        for ii in range(frames.shape[0]):
             for jj in range(frames.shape[1]):
                 for kk in range(frames.shape[2]):
                     for ll in range(frames.shape[3]):
