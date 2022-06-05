@@ -396,14 +396,15 @@ class fourD(QWidget):
         for ii in range(rows.shape[0]):
             kk = 0
             for jj in range(rows.shape[1]):
-                t1 = rows[ii, jj] > left
-                t2 = rows[ii, jj] < right
-                t3 = cols[ii, jj] > bot
-                t4 = cols[ii, jj] < top
-                t5 = t1 * t2 * t3 * t4
-                if t5:
-                    kk += 1
-            im[ii] = kk
+                for ll in range(rows.shape[2]):
+                    t1 = rows[ii, jj, ll] > left
+                    t2 = rows[ii, jj, ll] < right
+                    t3 = cols[ii, jj, ll] > bot
+                    t4 = cols[ii, jj, ll] < top
+                    t5 = t1 * t2 * t3 * t4
+                    if t5:
+                        kk += 1
+                im[ii] = kk
         return im
 
     @staticmethod
