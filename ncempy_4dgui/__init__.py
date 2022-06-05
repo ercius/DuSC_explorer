@@ -358,6 +358,7 @@ class fourD(QWidget):
         self.real_space_image_item.setImage(self.rs, autoRange=True)
 
     def update_real_jit(self):
+        print(self.fr_rows.shape)
         self.rs[:] = self.getImage_jit(self.fr_rows, self.fr_cols,
                                        int(self.diffraction_space_roi.pos().y()) - 1,
                                        int(self.diffraction_space_roi.pos().y() + self.diffraction_space_roi.size().y()) + 0,
