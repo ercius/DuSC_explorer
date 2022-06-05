@@ -535,6 +535,8 @@ def main():
     """Main function used to start the GUI."""
     
     qapp = QApplication([])
+#     fourD_view = fourD()
+    print('gpu version')
     fourD_view = fourD()
     fourD_view.show()
     qapp.exec_()
