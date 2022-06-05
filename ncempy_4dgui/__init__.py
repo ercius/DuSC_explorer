@@ -292,7 +292,7 @@ class fourD(QWidget):
         self.fr_full = np.zeros((self.sa.data.ravel().shape[0], mm), dtype=self.sa.data[0][0].dtype)
         for ii, ev in enumerate(self.sa.data.ravel()):
             self.fr_full[ii, :ev.shape[0]] = ev
-        self.fr_full_3d = self.fr_full.reshape((*self.scan_dimensions, self.fr_full.shape[1]))
+        self.fr_full_3d = self.fr_full.reshape((*self.scan_dimensions, self.num_frames_per_scan, self.fr_full.shape[1]))
 
         # del frames
 
@@ -337,7 +337,7 @@ class fourD(QWidget):
     def update_diffr_jit(self):
         self.dp[:] = self.getDenseFrame_jit(
             self.fr_full_3d[int(self.real_space_roi.pos().y()):int(self.real_space_roi.pos().y() + self.real_space_roi.size().y()) + 1,
-            int(self.real_space_roi.pos().x()):int(self.real_space_roi.pos().x() + self.real_space_roi.size().x()) + 1, :],
+            int(self.real_space_roi.pos().x()):int(self.real_space_roi.pos().x() + self.real_space_roi.size().x()) + 1, :, :],
             self.frame_dimensions)
 
         im = self.dp.reshape(self.frame_dimensions)
@@ -412,8 +412,9 @@ class fourD(QWidget):
 
         Parameters
         ----------
-        frames : 3D ndarray, (M, N, K)
-            A set of sparse frames to sum. Each entry is used as the strike location of an electron. T
+        frames : 3D ndarray, (I, J, K, L)
+            A set of sparse frames to sum. Each entry is used as the strike location of an electron. I, J, K, L
+            corresond to scan_dimension0, scan_dimension1, num_frame, event.
         frame_dimensions : tuple
             The size of the frame
 
@@ -425,12 +426,14 @@ class fourD(QWidget):
 
         """
         dp = np.zeros((frame_dimensions[0] * frame_dimensions[1]), np.uint32)
-        for ii in range(frames.shape[0]):
+        # nested for loop for: scan_dimsnsion0, scan_dimension1, num_frame, event
+        for kk in range(frames.shape[0]):
             for jj in range(frames.shape[1]):
                 for kk in range(frames.shape[2]):
-                    pos = frames[ii, jj, kk]
-                    if pos > 0:
-                        dp[pos] += 1
+                    for ll in range(frames.shape[3]):
+                        pos = frames[ii, jj, kk, ll]
+                        if pos > 0:
+                            dp[pos] += 1
         return dp
 
 
