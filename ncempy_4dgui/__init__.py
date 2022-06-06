@@ -17,6 +17,10 @@ from qtpy.QtWidgets import *
 from qtpy.QtCore import QRectF
 from qtpy import QtGui
 
+try:
+    import cupy as cp
+except ImportError:
+    print("Cupy not detected")
 
 class fourD(QWidget):
 
@@ -33,8 +37,8 @@ class fourD(QWidget):
         self.num_frames_per_scan = None
         self.fr_full = None
         self.fr_full_3d = None
-        self.fr_rows = None
-        self.fr_cols = None
+        self.fr_rows = np.empty((2,2,2),dtype=np.uint32)
+        self.fr_cols = np.empty((2,2,2),dtype=np.uint32)
         self.dp = None
         self.rs = None
         self.log_diffraction = True
@@ -123,7 +127,7 @@ class fourD(QWidget):
                                                 removable=False, invertible=False, pen='g')
         self.view2.addItem(self.diffraction_space_roi)
 
-        self.open_file()
+        # self.open_file()
 
         self.real_space_roi.sigRegionChanged.connect(self.update_diffr)
         self.diffraction_space_roi.sigRegionChanged.connect(self.update_real)
@@ -268,6 +272,7 @@ class fourD(QWidget):
         fPath : pathlib.Path
             The path of to the file to load.
         """
+        print("send to CPU only")
         self.statusBar.showMessage("Loading the sparse data...")
 
         # Temporary: remove "full expansion" warning
@@ -316,9 +321,6 @@ class fourD(QWidget):
 
         self.real_space_roi.setPos([ii // 4 + ii //8 for ii in self.scan_dimensions])
         self.diffraction_space_roi.setPos([ii // 4 + ii // 8 for ii in self.frame_dimensions])
-
-        self.update_real()
-        self.update_diffr()
                 
         self.statusBar.showMessage('loaded {}'.format(fPath.name))
 
@@ -440,17 +442,27 @@ class fourD(QWidget):
 
 class fourD_gpu(fourD):
     def __init__(self, *args, **kwargs):
-        import cupy as cp
-        super().__init()
         
         self.get_image_cupy_3 = cp.ElementwiseKernel(
                                 'uint32 fr_full, int32 left, int32 right, int32 bot, int32 top',
                                 'uint32 out',
                                 'out = ((fr_full % 576) > bot) * ((fr_full % 576) < top) * ((fr_full % 576) > bot) * ((fr_full % 576) < top)',
                                 'get_image_cupy_2')
+        
+        super(fourD_gpu, self).__init__(*args, **kwargs)
+        
+        # Disconnect CPU code
+        self.diffraction_space_roi.sigRegionChanged.disconnect(self.update_real)
+        
         # Set the update strategy to the GPU version
         self.update_real = self.update_real_gpu
-        self.update_diffr = self.update_diffr_gpu
+        #self.update_diffr = self.update_diffr_gpu
+        
+        # Connect GPU code to slot
+        #self.real_space_roi.sigRegionChanged.connect(self.update_diffr)
+        self.diffraction_space_roi.sigRegionChanged.connect(self.update_real)
+        #self.real_space_roi.sigRegionChanged.connect(self._update_position_message)
+        #self.diffraction_space_roi.sigRegionChanged.connect(self._update_position_message)
         
     def setData(self, fPath):
         """ Load the data from the HDF5 file. Must be in
@@ -461,6 +473,8 @@ class fourD_gpu(fourD):
         fPath : pathlib.Path
             The path of to the file to load.
         """
+        print('send data to GPU')
+        
         self.statusBar.showMessage("Loading the sparse data...")
 
         # Temporary: remove "full expansion" warning
@@ -472,29 +486,28 @@ class fourD_gpu(fourD):
         self.sa.allow_full_expand = True
         self.scan_dimensions = self.sa.scan_shape
         self.frame_dimensions = self.sa.frame_shape
+        self.num_frames_per_scan = self.sa.num_frames_per_scan
         print('scan dimensions = {}'.format(self.scan_dimensions))
 
         # Create a non-ragged array with zero padding
         self.statusBar.showMessage("Converting the data...")
-        # Create non-ragged array and load onto GPU
-        _ = np.zeros((sa.data.ravel().shape[0], mm), dtype=sa.data[0][0].dtype)
-        for ii, ev in enumerate(sa.data.ravel()):
-            _[ii, :ev.shape[0]] = ev
-        fr_full = cp.asarray(_)
-        del _
+        # Create a non-ragged array with zero padding
+        mm = 0
+        for ev in self.sa.data.ravel():
+            if ev.shape[0] > mm:
+                mm = ev.shape[0]
+        print('non-ragged array shape: {}'.format((self.sa.data.ravel().shape[0], mm)))
         
-        self.fr_full = np.zeros((self.sa.data.ravel().shape[0], mm), dtype=self.sa.data[0][0].dtype)
+        
+        # Create non-ragged array and load onto GPU
+        _ = np.zeros((self.sa.data.ravel().shape[0], mm), dtype=self.sa.data[0][0].dtype)
         for ii, ev in enumerate(self.sa.data.ravel()):
-            self.fr_full[ii, :ev.shape[0]] = ev
-        self.fr_full_3d = self.fr_full.reshape((*self.scan_dimensions, self.fr_full.shape[1]))
-
-        # del frames
-
-        print('non-ragged array size = {} GB'.format(self.fr_full.nbytes / 1e9))
-
-        # Find the row and col for each electron strike
-#         self.fr_rows = self.fr_full // 576
-#         self.fr_cols = self.fr_full % 576
+            _[ii, :ev.shape[0]] = ev
+        
+        self.fr_full_3d = _.reshape((*self.scan_dimensions, self.num_frames_per_scan, mm))
+        print('non-ragged array size = {} GB'.format(self.fr_full_3d.nbytes / 1e9))
+        self.fr_full = cp.asarray(self.fr_full_3d)
+        # del _
 
         self.dp = np.zeros(self.frame_dimensions[0] * self.frame_dimensions[1], np.uint32)
         self.rs = np.zeros(self.scan_dimensions[0] * self.scan_dimensions[1], np.uint32)
@@ -507,12 +520,12 @@ class fourD_gpu(fourD):
 
         self.real_space_roi.setSize([ii // 4 for ii in self.scan_dimensions])
         self.diffraction_space_roi.setSize([ii // 4 for ii in self.frame_dimensions])
+        
+        self.real_space_roi.setPos([ii // 4 + ii //8 for ii in self.scan_dimensions])
+        self.diffraction_space_roi.setPos([ii // 4 + ii // 8 for ii in self.frame_dimensions])
 
-        self.real_space_roi.setPos([0, 0])
-        self.diffraction_space_roi.setPos([0, 0])
-
-        self.update_real()
-        self.update_diffr()
+        #self.update_real()
+        #self.update_diffr()
 
         self.statusBar.showMessage('loaded {}'.format(fPath.name))
     
@@ -528,9 +541,10 @@ class fourD_gpu(fourD):
     def getImage_gpu(self,fr_full, left, right, bot, top):
         # Calculate everything in the scame kernel
         r5 = self.get_image_cupy_3(fr_full, left, right, bot, top)
-        r6 = r5.sum(axis=1)
+        r6 = r5.sum(axis=(2,3))
+        im = r6.get()
         del r5, r6 # avoid out of memory issues
-        return r6.get()
+        return im.ravel()
     
 def open_file():
     """Start the graphical user interface by opening a file. This is used from a python interpreter."""
@@ -542,6 +556,6 @@ def main():
     qapp = QApplication([])
 #     fourD_view = fourD()
     print('gpu version')
-    fourD_view = fourD()
+    fourD_view = fourD_gpu()
     fourD_view.show()
     qapp.exec_()
