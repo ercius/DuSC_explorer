@@ -9,7 +9,7 @@ from pathlib import Path
 import pyqtgraph as pg
 import numpy as np
 from tifffile import imsave
-from numba import jit
+from numba import jit, prange
 from numba.types.containers import UniTuple
 import stempy.io as stio
 
@@ -365,7 +365,7 @@ class fourD(QWidget):
         self.real_space_image_item.setImage(im, autoRange=True)
 
     @staticmethod
-    @jit(["uint32[:](uint32[:,:,:], uint32[:,:,:], int64, int64, int64, int64)"], nopython=True, nogil=True, parallel=True)
+    @jit(["uint32[:](uint32[:,:,:], uint32[:,:,:], int64, int64, int64, int64)"], nopython=True, nogil=True, parallel=False)
     def getImage_jit(rows, cols, left, right, bot, top):
         """ Sum number of electron strikes within a square box
         significant speed up using numba.jit compilation.
@@ -392,7 +392,7 @@ class fourD(QWidget):
         im = np.zeros(rows.shape[0], dtype=np.uint32)
         
         # For each scan position (ii) sum all events (kk) in each frame (jj)
-        for ii in range(im.shape[0]):
+        for ii in prange(im.shape[0]):
             ss = 0
             for jj in range(rows.shape[1]):
             	for kk in range(rows.shape[2]):
