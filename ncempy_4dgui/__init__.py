@@ -9,7 +9,7 @@ from pathlib import Path
 import pyqtgraph as pg
 import numpy as np
 from tifffile import imsave
-from numba import jit
+from numba import jit, prange
 from numba.types.containers import UniTuple
 import stempy.io as stio
 
@@ -392,7 +392,7 @@ class fourD(QWidget):
         im = np.zeros(rows.shape[0], dtype=np.uint32)
         
         # For each scan position (ii) sum all events (kk) in each frame (jj)
-        for ii in range(im.shape[0]):
+        for ii in prange(im.shape[0]):
             ss = 0
             for jj in range(rows.shape[1]):
             	for kk in range(rows.shape[2]):
@@ -429,10 +429,10 @@ class fourD(QWidget):
         """
         dp = np.zeros((frame_dimensions[0] * frame_dimensions[1]), np.uint32)
         # nested for loop for: scan_dimension0, scan_dimension1, num_frame, event
-        for ii in range(frames.shape[0]):
-            for jj in range(frames.shape[1]):
-                for kk in range(frames.shape[2]):
-                    for ll in range(frames.shape[3]):
+        for ii in prange(frames.shape[0]):
+            for jj in prange(frames.shape[1]):
+                for kk in prange(frames.shape[2]):
+                    for ll in prange(frames.shape[3]):
                         pos = frames[ii, jj, kk, ll]
                         if pos > 0:
                             dp[pos] += 1
