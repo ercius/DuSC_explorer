@@ -365,7 +365,7 @@ class fourD(QWidget):
         self.real_space_image_item.setImage(im, autoRange=True)
 
     @staticmethod
-    @jit(["uint32[:](uint32[:,:,:], uint32[:,:,:], int64, int64, int64, int64)"], nopython=True, nogil=True, parallel=False)
+    @jit(["uint32[:](uint32[:,:,:], uint32[:,:,:], int64, int64, int64, int64)"], nopython=True, nogil=True, parallel=True)
     def getImage_jit(rows, cols, left, right, bot, top):
         """ Sum number of electron strikes within a square box
         significant speed up using numba.jit compilation.
