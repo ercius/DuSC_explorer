@@ -429,10 +429,10 @@ class fourD(QWidget):
         """
         dp = np.zeros((frame_dimensions[0] * frame_dimensions[1]), np.uint32)
         # nested for loop for: scan_dimension0, scan_dimension1, num_frame, event
-        for ii in range(frames.shape[0]):
-            for jj in range(frames.shape[1]):
-                for kk in range(frames.shape[2]):
-                    for ll in range(frames.shape[3]):
+        for ii in prange(frames.shape[0]):
+            for jj in prange(frames.shape[1]):
+                for kk in prange(frames.shape[2]):
+                    for ll in prange(frames.shape[3]):
                         pos = frames[ii, jj, kk, ll]
                         if pos > 0:
                             dp[pos] += 1
