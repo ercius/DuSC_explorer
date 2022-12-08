@@ -7,6 +7,7 @@ author: Peter Ercius
 from pathlib import Path
 
 import pyqtgraph as pg
+from pyqtgraph.graphicsItems.ROI import Handle
 import numpy as np
 from tifffile import imsave
 from numba import jit, prange
@@ -16,12 +17,6 @@ import stempy.io as stio
 from qtpy.QtWidgets import *
 from qtpy.QtCore import QRectF
 from qtpy import QtGui
-
-class customRectROI(pg.RectROI):
-    def addHandle(self, *args, **kwargs):
-        """Overrides the handle size"""
-        self.handleSize = 10
-        super(customRectROI, self).addHandle(*args, **kwargs)
 
 
 class fourD(QWidget):
@@ -118,19 +113,20 @@ class fourD(QWidget):
 
         # Initialize the user interface objects
         # Image ROI
-        self.real_space_roi = customRectROI(pos=(0, 0), size=(10, 10),
+        self.real_space_roi = pg.RectROI(pos=(0, 0), size=(10, 10),
                                          translateSnap=True, snapSize=1, scaleSnap=True,
                                          removable=False, invertible=False, pen='g')
         self.view.addItem(self.real_space_roi)
 
         # Diffraction ROI
-        self.diffraction_space_roi = customRectROI(pos=(0, 0), size=(10, 10),
+        self.diffraction_space_roi = pg.RectROI(pos=(0, 0), size=(10, 10),
                                                 translateSnap=True, snapSize=1, scaleSnap=True,
                                                 removable=False, invertible=False, pen='g')
-        #print(self.diffraction_space_roi.handles[0]['item'].radius)
-        #self.diffraction_space_roi.handles[0]['item'].radius = 25
-        #self.diffraction_space_roi.addScaleHandle([0,0], [0,0])
-        #print(self.diffraction_space_roi.handleSize)
+        for hh in self.diffraction_space_roi.getHandles() + self.real_space_roi.getHandles():
+            hh.radius = 10
+            hh.buildPath()
+            hh.update()
+
         self.view2.addItem(self.diffraction_space_roi)
 
         self.open_file()
