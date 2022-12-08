@@ -39,6 +39,7 @@ class fourD(QWidget):
         self.dp = None
         self.rs = None
         self.log_diffraction = True
+        self.handle_size = 10
 
         self.available_colormaps = ['thermal', 'flame', 'yellowy', 'bipolar', 'spectrum', 'cyclic', 'greyclip', 'grey',
                                     'viridis', 'inferno', 'plasma', 'magma']
@@ -123,7 +124,7 @@ class fourD(QWidget):
                                                 translateSnap=True, snapSize=1, scaleSnap=True,
                                                 removable=False, invertible=False, pen='g')
         for hh in self.diffraction_space_roi.getHandles() + self.real_space_roi.getHandles():
-            hh.radius = 10
+            hh.radius = self.handle_size
             hh.buildPath()
             hh.update()
 
