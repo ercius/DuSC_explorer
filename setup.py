@@ -74,7 +74,7 @@ setup(
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=['stempy>=3.0', 'pyqtgraph>=0.13', 'tifffile', 'h5py>=2.9.0',
-                      'numpy', 'qtpy', 'numba<=0.56', 'PyQt5'],
+                      'numpy', 'qtpy', 'numba>=0.56', 'PyQt5'],
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
