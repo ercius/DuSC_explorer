@@ -73,8 +73,8 @@ setup(
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=['stempy>=3.0', 'pyqtgraph>=0.11, <0.12', 'tifffile', 'h5py>=2.9.0',
-                      'numpy', 'qtpy', 'numba<=0.54.1', 'PyQt6'],
+    install_requires=['stempy>=3.0', 'pyqtgraph>=0.13', 'tifffile', 'h5py>=2.9.0',
+                      'numpy', 'qtpy', 'numba>=0.56', 'PyQt5'],
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
