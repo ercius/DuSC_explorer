@@ -60,20 +60,22 @@ class fourD(QWidget):
         self.view2 = self.graphics.addViewBox(row=0, col=1, invertY=True)
 
         self.real_space_image_item = pg.ImageItem(border=pg.mkPen('w'))
-        self.real_space_image_view = pg.ImageView(imageItem=self.real_space_image_item)
+        #self.real_space_image_view = pg.ImageView(imageItem=self.real_space_image_item)
         self.view.addItem(self.real_space_image_item)
         self.real_space_image_item.setImage(np.zeros((100, 100), dtype=np.uint32))
         self.view.setAspectLocked()
-        self.real_space_image_view.setPredefinedGradient('viridis')
-
-        self.diffraction_pattern_imageview = pg.ImageItem(border=pg.mkPen('w'))
-        self.diffraction_space_image_view = pg.ImageView(imageItem=self.diffraction_pattern_imageview)
-        self.view2.addItem(self.diffraction_pattern_imageview)
-        self.diffraction_pattern_imageview.setImage(np.zeros((100, 100), dtype=np.uint32))
+        #self.real_space_image_view.setPredefinedGradient('viridis')
+        self.real_space_image_item.setColorMap('viridis')
+        
+        self.diffraction_pattern_image_item = pg.ImageItem(border=pg.mkPen('w'))
+        #self.diffraction_space_image_view = pg.ImageView(imageItem=self.diffraction_pattern_imageview)
+        self.view2.addItem(self.diffraction_pattern_image_item)
+        self.diffraction_pattern_image_item.setImage(np.zeros((100, 100), dtype=np.uint32))
         self.view2.setAspectLocked()
-        self.diffraction_space_image_view.setPredefinedGradient('viridis')
-
-        self.diffraction_pattern_imageview.setOpts(axisOrder="row-major")
+        #self.diffraction_space_image_view.setPredefinedGradient('viridis')
+        self.diffraction_pattern_image_item.setColorMap('viridis')
+        
+        self.diffraction_pattern_image_item.setOpts(axisOrder="row-major")
         self.real_space_image_item.setOpts(axisOrder="row-major")
 
         self.statusBar = QStatusBar()
@@ -337,9 +339,9 @@ class fourD(QWidget):
         self.dp = self.dp.sum(axis=(0, 1))
 
         if self.log_diffraction:
-            self.diffraction_pattern_imageview.setImage(np.log(self.dp + 1), autoRange=True)
+            self.diffraction_pattern_image_item.setImage(np.log(self.dp + 1), autoRange=True)
         else:
-            self.diffraction_pattern_imageview.setImage(self.dp, autoRange=True)
+            self.diffraction_pattern_image_item.setImage(self.dp, autoRange=True)
 
     def update_diffr_jit(self):
         self.dp[:] = self.getDenseFrame_jit(
@@ -349,9 +351,9 @@ class fourD(QWidget):
 
         im = self.dp.reshape(self.frame_dimensions)
         if self.log_diffraction:
-            self.diffraction_pattern_imageview.setImage(np.log(im + 1), autoRange=True)
+            self.diffraction_pattern_image_item.setImage(np.log(im + 1), autoRange=True)
         else:
-            self.diffraction_pattern_imageview.setImage(im, autoRange=True)
+            self.diffraction_pattern_image_item.setImage(im, autoRange=True)
 
     def update_real_stempy(self):
         """ Update the real space image by summing in diffraction space
