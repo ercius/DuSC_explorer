@@ -43,7 +43,7 @@ class fourD(QWidget):
 
         self.available_colormaps = ['thermal', 'flame', 'yellowy', 'bipolar', 'spectrum', 'cyclic', 'greyclip', 'grey',
                                     'viridis', 'inferno', 'plasma', 'magma']
-        self.colormap = 'viridis'
+        self.colormap = 'viridis' # default colormap
 
         super(fourD, self).__init__(*args, *kwargs)
         self.setWindowTitle("Stempy: Sparse 4D Data Explorer")
@@ -65,7 +65,7 @@ class fourD(QWidget):
         self.real_space_image_item.setImage(np.zeros((100, 100), dtype=np.uint32))
         self.view.setAspectLocked()
         #self.real_space_image_view.setPredefinedGradient('viridis')
-        self.real_space_image_item.setColorMap('viridis')
+        self.real_space_image_item.setColorMap(self.colormap)
         
         self.diffraction_pattern_image_item = pg.ImageItem(border=pg.mkPen('w'))
         #self.diffraction_space_image_view = pg.ImageView(imageItem=self.diffraction_pattern_imageview)
@@ -73,7 +73,7 @@ class fourD(QWidget):
         self.diffraction_pattern_image_item.setImage(np.zeros((100, 100), dtype=np.uint32))
         self.view2.setAspectLocked()
         #self.diffraction_space_image_view.setPredefinedGradient('viridis')
-        self.diffraction_pattern_image_item.setColorMap('viridis')
+        self.diffraction_pattern_image_item.setColorMap(self.colormap)
         
         self.diffraction_pattern_image_item.setOpts(axisOrder="row-major")
         self.real_space_image_item.setOpts(axisOrder="row-major")
@@ -149,8 +149,8 @@ class fourD(QWidget):
 
     def _on_use_colormap(self):
         action = self.sender()
-        self.diffraction_space_image_view.setPredefinedGradient(action.text())
-        self.real_space_image_view.setPredefinedGradient(action.text())
+        self.diffraction_space_image_item.setColorMap(action.text())
+        self.real_space_image_item.setColorMapaction.text())
 
     def _on_export(self):
         """Export the shown diffraction pattern as raw data in TIF file format"""
