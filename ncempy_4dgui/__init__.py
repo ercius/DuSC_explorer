@@ -41,8 +41,7 @@ class fourD(QWidget):
         self.log_diffraction = True
         self.handle_size = 10
 
-        self.available_colormaps = ['thermal', 'flame', 'yellowy', 'bipolar', 'spectrum', 'cyclic', 'greyclip', 'grey',
-                                    'viridis', 'inferno', 'plasma', 'magma']
+        self.available_colormaps = ['viridis', 'inferno', 'plasma', 'magma','cividis','CET-C5','CET-C5s']
         self.colormap = 'viridis' # default colormap
 
         super(fourD, self).__init__(*args, *kwargs)
@@ -149,7 +148,7 @@ class fourD(QWidget):
 
     def _on_use_colormap(self):
         action = self.sender()
-        self.diffraction_space_image_item.setColorMap(action.text())
+        self.diffraction_pattern_image_item.setColorMap(action.text())
         self.real_space_image_item.setColorMap(action.text())
 
     def _on_export(self):
