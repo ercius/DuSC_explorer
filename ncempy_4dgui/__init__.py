@@ -150,7 +150,7 @@ class fourD(QWidget):
     def _on_use_colormap(self):
         action = self.sender()
         self.diffraction_space_image_item.setColorMap(action.text())
-        self.real_space_image_item.setColorMapaction.text())
+        self.real_space_image_item.setColorMap(action.text())
 
     def _on_export(self):
         """Export the shown diffraction pattern as raw data in TIF file format"""
