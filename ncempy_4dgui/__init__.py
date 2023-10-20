@@ -150,7 +150,40 @@ class fourD(QWidget):
         action = self.sender()
         self.diffraction_pattern_image_item.setColorMap(action.text())
         self.real_space_image_item.setColorMap(action.text())
+    def SMV_popup(self):
+        """Generate pop-up window where user can input correct metadata written to SMV file"""
+        self.popUp = QDialog(self)
+        self.popUp.setWindowTitle("Input metadata for SMV")
 
+        # defaults: 300 keV, 85 mm indicated CL = 110 mm corrected, unbinned 0.01 mm pixel size, assume dead center
+        self.setting1 = QLineEdit("0.0197")
+        self.setting2 = QLineEdit("110")
+        self.setting3 = QLineEdit("0.01")
+        self.setting4 = QLineEdit("288")
+        self.setting5 = QLineEdit("288")
+
+        popUpLayout = QFormLayout()
+        popUpLayout.addRow('Wavelength (angstroms)', self.setting1)
+        popUpLayout.addRow('Camera length', self.setting2)
+        popUpLayout.addRow('Physical pixel size (mm)', self.setting3)
+        popUpLayout.addRow('Beam center x (pixels)', self.setting4)
+        popUpLayout.addRow('Beam center y (pixels)', self.setting5)
+        save_button = QPushButton('Save')
+        save_button.clicked.connect(self.close_SMV_popup)
+        popUpLayout.addWidget(save_button)
+
+        self.popUp.setLayout(popUpLayout)
+        self.popUp.exec()
+
+    def close_SMV_popup(self):
+        """Save input and close pop-up window"""
+        self.wavelength = self.setting1.text()
+        self.CL = self.setting2.text()
+        self.pixelsize = self.setting3.text()
+        self.centerx = self.setting4.text()
+        self.centery = self.setting5.text()
+
+        self.popUp.close()
     def _on_export(self):
         """Export the shown diffraction pattern as raw data in TIF file format"""
         action = self.sender()
@@ -160,6 +193,7 @@ class fourD(QWidget):
         if 'TIF' in action.text():
             fd.setNameFilter("TIF (*.tif)")
         elif 'SMV' in action.text():
+            self.SMV_popup()
             fd.setNameFilter("IMG (*.IMG)")
         fd.setDirectory(str(self.current_dir))
         fd.setFileMode(pg.FileDialog.AnyFile)
@@ -222,13 +256,13 @@ class fourD(QWidget):
             f0.write(f"TYPE={dtype};\n")
             f0.write(f"SIZE1={im.shape[1]};\n")  # size1 is columns
             f0.write(f"SIZE2={im.shape[0]};\n")  # size 2 is rows
-            f0.write(f"PIXEL_SIZE={pixel_size};\n") # physical pixel size in micron
-            f0.write(f"WAVELENGTH={lamda};\n") # wavelength
-            if mag:
-                f0.write(f"DISTANCE={int(mag)};\n")
+            f0.write(f"PIXEL_SIZE={self.pixelsize};\n")  # physical pixel size in micron
+            f0.write(f"WAVELENGTH={self.wavelength};\n")  # wavelength
+            if self.CL:
+                f0.write(f"DISTANCE={self.CL};\n")
             f0.write("PHI=0.0;\n")
-            f0.write("BEAM_CENTER_X=1.0;\n")
-            f0.write("BEAM_CENTER_Y=1.0;\n")
+            f0.write(f"BEAM_CENTER_X={self.centerx};\n")
+            f0.write(f"BEAM_CENTER_Y={self.centery};\n")
             f0.write("BIN=1x1;\n")
             f0.write("DATE=Thu Oct 21 23:06:09 2021;\n")
             f0.write("DETECTOR_SN=unknown;\n")
@@ -237,6 +271,12 @@ class fourD(QWidget):
             f0.write("IMAGE_PEDESTAL=0;\n")
             f0.write("TIME=10.0;\n")
             f0.write("TWOTHETA=0;\n")
+
+            # Append coordinates and size of real-space box so there is a permanent record of this in metadata
+            f0.write(f"4DCAMERA_REAL_X={int(self.real_space_roi.pos().x())};\n")
+            f0.write(f"4DCAMERA_REAL_Y={int(self.real_space_roi.pos().y())};\n")
+            f0.write(f"4DCAMERA_BOXSIZE_X={int(self.real_space_roi.size().x())};\n")
+            f0.write(f"4DCAMERA_BOXSIZE_Y={int(self.real_space_roi.size().y())};\n")
             f0.write("}\n")
         # Append the binary image data at the end of the header
         with open(out_path, 'rb+') as f0:
@@ -403,14 +443,14 @@ class fourD(QWidget):
         for ii in prange(im.shape[0]):
             ss = 0
             for jj in range(rows.shape[1]):
-            	for kk in range(rows.shape[2]):
-	                t1 = rows[ii, jj, kk] > left
-	                t2 = rows[ii, jj, kk] < right
-	                t3 = cols[ii, jj, kk] > bot
-	                t4 = cols[ii, jj, kk] < top
-	                t5 = t1 * t2 * t3 * t4
-	                if t5:
-	                    ss += 1
+                for kk in range(rows.shape[2]):
+                    t1 = rows[ii, jj, kk] > left
+                    t2 = rows[ii, jj, kk] < right
+                    t3 = cols[ii, jj, kk] > bot
+                    t4 = cols[ii, jj, kk] < top
+                    t5 = t1 * t2 * t3 * t4
+                    if t5:
+                        ss += 1
             im[ii] = ss
         return im
 
