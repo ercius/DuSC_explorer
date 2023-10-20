@@ -164,7 +164,7 @@ class fourD(QWidget):
 
         popUpLayout = QFormLayout()
         popUpLayout.addRow('Wavelength (angstroms)', self.setting1)
-        popUpLayout.addRow('Camera length', self.setting2)
+        popUpLayout.addRow('Camera length (mm)', self.setting2)
         popUpLayout.addRow('Physical pixel size (mm)', self.setting3)
         popUpLayout.addRow('Beam center x (pixels)', self.setting4)
         popUpLayout.addRow('Beam center y (pixels)', self.setting5)
