@@ -18,7 +18,7 @@ from qtpy import QtGui
 class fourD(QWidget):
 
     def __init__(self, *args, **kwargs):
-
+        # test
         self.real_space_limit = None
         self.diffraction_pattern_limit = None
         self.sa = None
@@ -67,7 +67,7 @@ class fourD(QWidget):
         self.view2.addItem(self.diffraction_pattern_image_item)
         self.view2.setAspectLocked()
         self.diffraction_pattern_image_item.setColorMap('viridis')
-        
+
         #self.diffraction_pattern_imageview.setOpts(axisOrder="row-major")
         #self.real_space_image_item.setOpts(axisOrder="row-major")
 
