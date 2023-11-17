@@ -359,11 +359,11 @@ class fourD(QWidget):
         self.real_space_limit = QRectF(0, 0, self.scan_dimensions[1], self.scan_dimensions[0])
         self.real_space_roi.maxBounds = self.real_space_limit
 
-        self.real_space_roi.setSize([ii // 4 for ii in self.scan_dimensions])
-        self.diffraction_space_roi.setSize([ii // 4 for ii in self.frame_dimensions])
+        self.real_space_roi.setSize([ii // 4 for ii in self.scan_dimensions][::-1])
+        self.diffraction_space_roi.setSize([ii // 4 for ii in self.frame_dimensions][::-1])
 
-        self.real_space_roi.setPos([ii // 4 + ii //8 for ii in self.scan_dimensions])
-        self.diffraction_space_roi.setPos([ii // 4 + ii // 8 for ii in self.frame_dimensions])
+        self.real_space_roi.setPos([ii // 4 + ii //8 for ii in self.scan_dimensions][::-1])
+        self.diffraction_space_roi.setPos([ii // 4 + ii // 8 for ii in self.frame_dimensions][::-1])
 
         self.update_real()
         self.update_diffr()
