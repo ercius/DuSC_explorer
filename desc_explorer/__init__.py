@@ -19,7 +19,7 @@ from qtpy.QtCore import QRectF
 from qtpy import QtGui
 
 
-class fourD(QWidget):
+class DeSC(QWidget):
 
     def __init__(self, *args, **kwargs):
 
@@ -44,7 +44,7 @@ class fourD(QWidget):
         self.available_colormaps = ['viridis', 'inferno', 'plasma', 'magma','cividis','CET-C5','CET-C5s']
         self.colormap = 'viridis' # default colormap
 
-        super(fourD, self).__init__(*args, *kwargs)
+        super(DeSC, self).__init__(*args, *kwargs)
         self.setWindowTitle("Stempy: Sparse 4D Data Explorer")
         self.setWindowIcon(QtGui.QIcon('MF_logo_only_small.ico'))
 
@@ -495,6 +495,6 @@ def main():
     """Main function used to start the GUI."""
     
     qapp = QApplication([])
-    fourD_view = fourD()
-    fourD_view.show()
+    DeSC_view = DeSC()
+    DeSC_view.show()
     qapp.exec_()
