@@ -12,4 +12,4 @@ dependencies = ['stempy>=3.0', 'pyqtgraph>=0.13', 'tifffile', 'h5py>=2.9.0', 'nu
 version = "1.0"
 
 [project.scripts]
-DeSC_explorer = "desc_explorer:open_file"
+DuSC_explorer = "DuSC_explorer:open_file"
