@@ -4,7 +4,7 @@ Load TitanX data and show real and reciprocal space.
 The real space ROI can be rotated
 
 author: Peter Ercius
-date: 2023/11/02y
+date: 2023/11/02
 
 """
 

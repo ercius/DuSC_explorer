@@ -19,7 +19,7 @@ from qtpy.QtCore import QRectF
 from qtpy import QtGui
 
 
-class fourD(QWidget):
+class DuSC(QWidget):
 
     def __init__(self, *args, **kwargs):
 
@@ -44,9 +44,9 @@ class fourD(QWidget):
         self.available_colormaps = ['viridis', 'inferno', 'plasma', 'magma','cividis','CET-C5','CET-C5s']
         self.colormap = 'viridis' # default colormap
 
-        super(fourD, self).__init__(*args, *kwargs)
-        self.setWindowTitle("Stempy: Sparse 4D Data Explorer")
-        self.setWindowIcon(QtGui.QIcon('MF_logo_only_small.ico'))
+        super(DuSC, self).__init__(*args, *kwargs)
+        self.setWindowTitle("DuSC: Dual Space Crystallography Explorer")
+        self.setWindowIcon(QtGui.QIcon('./DuSC_explorer/DuSC_icon_small.ico'))
 
         # Set the update strategy to the JIT version
         self.update_real = self.update_real_jit
@@ -495,6 +495,6 @@ def main():
     """Main function used to start the GUI."""
     
     qapp = QApplication([])
-    fourD_view = fourD()
-    fourD_view.show()
+    DuSC_view = DuSC()
+    DuSC_view.show()
     qapp.exec_()
