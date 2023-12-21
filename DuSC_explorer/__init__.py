@@ -45,8 +45,8 @@ class DuSC(QWidget):
         self.colormap = 'viridis' # default colormap
 
         super(DuSC, self).__init__(*args, *kwargs)
-        self.setWindowTitle("Stempy: Sparse 4D Data Explorer")
-        self.setWindowIcon(QtGui.QIcon('MF_logo_only_small.ico'))
+        self.setWindowTitle("DuSC: Dual Space Crystallography Explorer")
+        self.setWindowIcon(QtGui.QIcon('DeSC_icon_small.ico'))
 
         # Set the update strategy to the JIT version
         self.update_real = self.update_real_jit
