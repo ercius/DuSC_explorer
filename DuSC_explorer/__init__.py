@@ -46,7 +46,7 @@ class DuSC(QWidget):
 
         super(DuSC, self).__init__(*args, *kwargs)
         self.setWindowTitle("DuSC: Dual Space Crystallography Explorer")
-        self.setWindowIcon(QtGui.QIcon('DeSC_icon_small.ico'))
+        self.setWindowIcon(QtGui.QIcon('./DuSC_explorer/DuSC_icon_small.ico'))
 
         # Set the update strategy to the JIT version
         self.update_real = self.update_real_jit
