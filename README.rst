@@ -1,41 +1,51 @@
 ========
-4D Camera Graphical User Interface
+Dual Space Crystallogrpahy (DuSC) Explorer
 ========
 
-A GUI based on stempy and pyqtgraph to visualize sparse 4D-STEM data sets.
+A graphical user interface based on pyqtgraph to visualize sparse 4D-STEM data sets. 
 
 ============
 Installation
 ============
 
-Clone the repository and install from source using
+DuSC is based on pyqtgraph. Install this first according to the [installation instructions](https://pyqtgraph.readthedocs.io/en/latest/getting_started/installation.html). For example:
 
-``pip install -e .``
+``$ pip install pyqtgraph``
 
-from the source directory.
+Next, clone the DuSC repository using Git and install from source by typing
+
+``$ pip install -e .``
+
+in the source directory.
+
+In some cases, you also need to install PyQT or Pyside. This should be installed with pyqtgrpah in the first action above but not always. In case you see error related to QT try:
+
+``$ pip install PyQt6``
+
+Note: A pypi version is coming soon to make this much easier!
 
 =============
 Compatibility
 =============
 
-This program requires pyqtgraph 0.11. You may also need to install different versions of QT depending on your
-operating system. Python 3.9 and PyQt6 have been tested to work as specified in the table on the [pyqtgaph
-Github README] (https://github.com/pyqtgraph/pyqtgraph#qt-bindings-test-matrix)
+This program requires pyqtgraph >=0.11. You will also need to install the corresponding version of QT depending on your operating system. Python 3.9 and PyQt6 are confirmed to work together.
 
-===============
-Running the GUI
-===============
+===================
+Running the Program
+===================
 
 If you installed the source (see above) then you can type
 
-``$ ncempy_4dgui``
+``$ DuSC_explorer``
 
-at a terminal or command prompt and the GUI should start.
+at a terminal or command prompt and the program should start.
 
 Alternatively, in a python interpreter you can run these commands:
 
-``>>> import ncempy_4dgui``
+``$ python``
 
-``>>> ncempy_4dgui.open_file()``
+``>>> import DuSC_explorer``
 
-to start the GUI.
+``>>> DuSC_explorer.open_file()``
+
+and a file selector will open. Select a file and the program will load the file.
