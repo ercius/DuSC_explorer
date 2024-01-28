@@ -8,6 +8,8 @@ A graphical user interface based on pyqtgraph to visualize sparse 4D-STEM data s
 Installation
 ============
 
+`test RST link <www.google.com>`_
+
 DuSC is based on pyqtgraph. Install this first according to the [installation instructions] (https://pyqtgraph.readthedocs.io/en/latest/getting_started/installation.html). For example:
 
 ``$ pip install pyqtgraph``
