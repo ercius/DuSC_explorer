@@ -18,7 +18,7 @@ Next, clone the DuSC repository using Git and install from source by typing:
 
 in the source directory.
 
-In some cases, you also need to install PyQT or Pyside. This should be installed with pyqtgrpah in the first action above but not always. In case you see error related to QT try:
+In some cases, you also need to install PyQT or Pyside. This should be installed with pyqtgrpah in the first action above but not always. In case you see errors related to QT try:
 
 ``$ pip install PyQt6``
 
