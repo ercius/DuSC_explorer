@@ -1,5 +1,5 @@
 ========
-Dual Space Crystallogrpahy (DuSC) Explorer
+Dual Space Crystallography (DuSC) Explorer
 ========
 
 A graphical user interface based on pyqtgraph to visualize sparse 4D-STEM data sets. 
@@ -18,7 +18,7 @@ Next, clone the DuSC repository using Git and install from source by typing:
 
 in the source directory.
 
-In some cases, you also need to install PyQT or Pyside. This should be installed with pyqtgrpah in the first action above but not always. In case you see errors related to QT try:
+In some cases, you also need to install PyQT or Pyside. This should be installed with pyqtgraph in the first action above but not always. In case you see errors related to QT try:
 
 ``$ pip install PyQt6``
 
