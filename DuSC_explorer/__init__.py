@@ -5,6 +5,7 @@ author: Peter Ercius
 """
 
 from pathlib import Path
+from datetime import datetime
 
 import pyqtgraph as pg
 from pyqtgraph.graphicsItems.ROI import Handle
@@ -268,7 +269,8 @@ class DuSC(QWidget):
             f0.write(f"BEAM_CENTER_X={self.centerx};\n")
             f0.write(f"BEAM_CENTER_Y={self.centery};\n")
             f0.write("BIN=1x1;\n")
-            f0.write("DATE=Thu Oct 21 23:06:09 2021;\n")
+#             f0.write("DATE=Thu Oct 21 23:06:09 2021;\n")
+            f0.write(f"DATE={str(datetime.now())};\n")
             f0.write("DETECTOR_SN=unknown;\n")
             f0.write("OSC_RANGE=1.0;\n")
             f0.write("OSC_START=0;\n")
