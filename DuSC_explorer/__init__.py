@@ -40,7 +40,8 @@ class DuSC(QWidget):
         self.rs = None
         self.log_diffraction = True
         self.handle_size = 10
-
+        self.file_path = None  # the pathlib.Path for the file
+        
         self.available_colormaps = ['viridis', 'inferno', 'plasma', 'magma','cividis','CET-C5','CET-C5s']
         self.colormap = 'viridis' # default colormap
 
@@ -140,6 +141,7 @@ class DuSC(QWidget):
 
     def _update_position_message(self):
         self.statusBar.showMessage(
+            f'{self.file_path.name} '
             f'Real: ({int(self.real_space_roi.pos().y())}, {int(self.real_space_roi.pos().x())}), '
             f'({int(self.real_space_roi.size().y())}, {int(self.real_space_roi.size().x())}); '
             f'Diffraction: ({int(self.diffraction_space_roi.pos().y())}, {int(self.diffraction_space_roi.pos().x())}), '
@@ -150,6 +152,7 @@ class DuSC(QWidget):
         action = self.sender()
         self.diffraction_pattern_image_item.setColorMap(action.text())
         self.real_space_image_item.setColorMap(action.text())
+    
     def SMV_popup(self):
         """Generate pop-up window where user can input correct metadata written to SMV file"""
         self.popUp = QDialog(self)
@@ -184,6 +187,7 @@ class DuSC(QWidget):
         self.centery = self.setting5.text()
 
         self.popUp.close()
+    
     def _on_export(self):
         """Export the shown diffraction pattern as raw data in TIF file format"""
         action = self.sender()
@@ -299,8 +303,8 @@ class DuSC(QWidget):
         if fd.exec_():
             file_names = fd.selectedFiles()
             self.current_dir = Path(file_names[0]).parent
-
-            self.setData(Path(file_names[0]))
+            self.file_path = Path(file_names[0])
+            self.setData(self.file_path)
 
     @staticmethod
     def temp(aa):
@@ -345,6 +349,7 @@ class DuSC(QWidget):
         self.fr_full_3d = self.fr_full.reshape((*self.scan_dimensions, self.num_frames_per_scan, self.fr_full.shape[1]))
 
         print('non-ragged array size = {} GB'.format(self.fr_full.nbytes / 1e9))
+        print('Full memory requirement = {} GB'.format(3 * self.fr_full.nbytes / 1e9))
 
         # Find the row and col for each electron strike
         self.fr_rows = (self.fr_full // 576).reshape(self.scan_dimensions[0] * self.scan_dimensions[1], self.num_frames_per_scan, mm)
