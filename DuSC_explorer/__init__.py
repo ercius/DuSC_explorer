@@ -253,7 +253,7 @@ class DuSC(QWidget):
         with open(out_path, 'wb') as f0:
             f0.write(np.zeros(512, dtype=np.uint8))
         # Write the header over the zeros as needed
-        with open(out_path, 'r+') as f0:
+        with open(out_path, 'r+', newline='\n') as f0:
             f0.write("{\nHEADER_BYTES=512;\n")
             f0.write("DIM=2;\n")
             f0.write("BYTE_ORDER=little_endian;\n")
