@@ -141,7 +141,7 @@ class DuSC(QWidget):
 
     def _update_position_message(self):
         self.statusBar.showMessage(
-            f'{self.file_path.name} '
+            f'{self.file_path.name}; '
             f'Real: ({int(self.real_space_roi.pos().y())}, {int(self.real_space_roi.pos().x())}), '
             f'({int(self.real_space_roi.size().y())}, {int(self.real_space_roi.size().x())}); '
             f'Diffraction: ({int(self.diffraction_space_roi.pos().y())}, {int(self.diffraction_space_roi.pos().x())}), '
