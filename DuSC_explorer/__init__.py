@@ -269,7 +269,7 @@ class DuSC(QWidget):
             f0.write(f"BEAM_CENTER_Y={self.centery};\n")
             f0.write("BIN=1x1;\n")
             f0.write(f"DATE={str(datetime.now())};\n")
-            f0.write("DETECTOR_SN=unknown;\n")
+            f0.write("DETECTOR_SN=1;\n")  # detector serial number
             f0.write("OSC_RANGE=1.0;\n")
             f0.write("OSC_START=0;\n")
             f0.write("IMAGE_PEDESTAL=0;\n")
