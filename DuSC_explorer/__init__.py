@@ -5,6 +5,7 @@ author: Peter Ercius
 """
 
 from pathlib import Path
+from datetime import datetime
 
 import pyqtgraph as pg
 from pyqtgraph.graphicsItems.ROI import Handle
@@ -40,7 +41,8 @@ class DuSC(QWidget):
         self.rs = None
         self.log_diffraction = True
         self.handle_size = 10
-
+        self.file_path = None  # the pathlib.Path for the file
+        
         self.available_colormaps = ['viridis', 'inferno', 'plasma', 'magma','cividis','CET-C5','CET-C5s']
         self.colormap = 'viridis' # default colormap
 
@@ -140,6 +142,7 @@ class DuSC(QWidget):
 
     def _update_position_message(self):
         self.statusBar.showMessage(
+            f'{self.file_path.name}; '
             f'Real: ({int(self.real_space_roi.pos().y())}, {int(self.real_space_roi.pos().x())}), '
             f'({int(self.real_space_roi.size().y())}, {int(self.real_space_roi.size().x())}); '
             f'Diffraction: ({int(self.diffraction_space_roi.pos().y())}, {int(self.diffraction_space_roi.pos().x())}), '
@@ -150,6 +153,7 @@ class DuSC(QWidget):
         action = self.sender()
         self.diffraction_pattern_image_item.setColorMap(action.text())
         self.real_space_image_item.setColorMap(action.text())
+    
     def SMV_popup(self):
         """Generate pop-up window where user can input correct metadata written to SMV file"""
         self.popUp = QDialog(self)
@@ -184,6 +188,7 @@ class DuSC(QWidget):
         self.centery = self.setting5.text()
 
         self.popUp.close()
+    
     def _on_export(self):
         """Export the shown diffraction pattern as raw data in TIF file format"""
         action = self.sender()
@@ -249,7 +254,7 @@ class DuSC(QWidget):
         with open(out_path, 'wb') as f0:
             f0.write(np.zeros(512, dtype=np.uint8))
         # Write the header over the zeros as needed
-        with open(out_path, 'r+') as f0:
+        with open(out_path, 'r+', newline='\n') as f0:
             f0.write("{\nHEADER_BYTES=512;\n")
             f0.write("DIM=2;\n")
             f0.write("BYTE_ORDER=little_endian;\n")
@@ -258,14 +263,13 @@ class DuSC(QWidget):
             f0.write(f"SIZE2={im.shape[0]};\n")  # size 2 is rows
             f0.write(f"PIXEL_SIZE={self.pixelsize};\n")  # physical pixel size in micron
             f0.write(f"WAVELENGTH={self.wavelength};\n")  # wavelength
-            if self.CL:
-                f0.write(f"DISTANCE={self.CL};\n")
+            f0.write(f"DISTANCE={self.CL};\n")
             f0.write("PHI=0.0;\n")
             f0.write(f"BEAM_CENTER_X={self.centerx};\n")
             f0.write(f"BEAM_CENTER_Y={self.centery};\n")
             f0.write("BIN=1x1;\n")
-            f0.write("DATE=Thu Oct 21 23:06:09 2021;\n")
-            f0.write("DETECTOR_SN=unknown;\n")
+            f0.write(f"DATE={str(datetime.now())};\n")
+            f0.write("DETECTOR_SN=1;\n")  # detector serial number
             f0.write("OSC_RANGE=1.0;\n")
             f0.write("OSC_START=0;\n")
             f0.write("IMAGE_PEDESTAL=0;\n")
@@ -277,6 +281,7 @@ class DuSC(QWidget):
             f0.write(f"4DCAMERA_REAL_Y={int(self.real_space_roi.pos().y())};\n")
             f0.write(f"4DCAMERA_BOXSIZE_X={int(self.real_space_roi.size().x())};\n")
             f0.write(f"4DCAMERA_BOXSIZE_Y={int(self.real_space_roi.size().y())};\n")
+            f0.write(f"4DCAMERA_FILENAME={self.file_path.name};\n")
             f0.write("}\n")
         # Append the binary image data at the end of the header
         with open(out_path, 'rb+') as f0:
@@ -299,8 +304,8 @@ class DuSC(QWidget):
         if fd.exec_():
             file_names = fd.selectedFiles()
             self.current_dir = Path(file_names[0]).parent
-
-            self.setData(Path(file_names[0]))
+            self.file_path = Path(file_names[0])
+            self.setData(self.file_path)
 
     @staticmethod
     def temp(aa):
@@ -345,6 +350,7 @@ class DuSC(QWidget):
         self.fr_full_3d = self.fr_full.reshape((*self.scan_dimensions, self.num_frames_per_scan, self.fr_full.shape[1]))
 
         print('non-ragged array size = {} GB'.format(self.fr_full.nbytes / 1e9))
+        print('Full memory requirement = {} GB'.format(3 * self.fr_full.nbytes / 1e9))
 
         # Find the row and col for each electron strike
         self.fr_rows = (self.fr_full // 576).reshape(self.scan_dimensions[0] * self.scan_dimensions[1], self.num_frames_per_scan, mm)
