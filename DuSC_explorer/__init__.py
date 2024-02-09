@@ -281,6 +281,7 @@ class DuSC(QWidget):
             f0.write(f"4DCAMERA_REAL_Y={int(self.real_space_roi.pos().y())};\n")
             f0.write(f"4DCAMERA_BOXSIZE_X={int(self.real_space_roi.size().x())};\n")
             f0.write(f"4DCAMERA_BOXSIZE_Y={int(self.real_space_roi.size().y())};\n")
+            f0.write(f"4DCAMERA_FILENAME={self.file_path.name};\n")
             f0.write("}\n")
         # Append the binary image data at the end of the header
         with open(out_path, 'rb+') as f0:
