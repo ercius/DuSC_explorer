@@ -263,13 +263,11 @@ class DuSC(QWidget):
             f0.write(f"SIZE2={im.shape[0]};\n")  # size 2 is rows
             f0.write(f"PIXEL_SIZE={self.pixelsize};\n")  # physical pixel size in micron
             f0.write(f"WAVELENGTH={self.wavelength};\n")  # wavelength
-            if self.CL:
-                f0.write(f"DISTANCE={self.CL};\n")
+            f0.write(f"DISTANCE={self.CL};\n")
             f0.write("PHI=0.0;\n")
             f0.write(f"BEAM_CENTER_X={self.centerx};\n")
             f0.write(f"BEAM_CENTER_Y={self.centery};\n")
             f0.write("BIN=1x1;\n")
-#             f0.write("DATE=Thu Oct 21 23:06:09 2021;\n")
             f0.write(f"DATE={str(datetime.now())};\n")
             f0.write("DETECTOR_SN=unknown;\n")
             f0.write("OSC_RANGE=1.0;\n")
