@@ -37,4 +37,4 @@ Alternatively, in a python interpreter for the correct environment you can run t
 
 ``>>> DuSC_explorer.open_file()``
 
-to start the GUI.
+to start the GUI. 
