@@ -21,7 +21,7 @@ If you want to develop or get the newest changes:
 
 # Compatibility
 
-This program requires pyqtgraph >=0.11. You may also need to install different versions of QT depending on your operating system. Python 3.9 and PyQt6 have been tested to work as specified in the table on the [pyqtgaph Github README] (https://github.com/pyqtgraph/pyqtgraph#qt-bindings-test-matrix)
+This program requires pyqtgraph >=0.13. You may also need to install different versions of QT depending on your operating system. Python 3.9 and PyQt6 have been tested to work as specified in the table on the [pyqtgaph Github README] (https://github.com/pyqtgraph/pyqtgraph#qt-bindings-test-matrix)
 
 # Running the program
 
