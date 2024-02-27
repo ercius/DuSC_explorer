@@ -3,7 +3,7 @@ requires = ["setuptools", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = DuSC_explorer
+name = "DuSC_explorer"
 authors = [{name = "Peter Ercius", email="percius@lbl.gov"}]
 description = "Graphical user interface to view Dual Space Crystallography data from the 4D Camera of the Molecular Foundry."
 readme = "README.md"
