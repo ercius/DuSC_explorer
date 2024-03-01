@@ -45,7 +45,7 @@ Under the `Display` drop-down menu, you’ll see two options:
 
 Under the `Export` drop-down menu, you’ll see three options:
 
-1.	`Export diffraction (TIF)` writes the raw data associated with the displayed diffraction pattern as a 32-bit TIF file. Each pixel value in this file is calibrated in units of electrons. (This choice of bit depth ensures no loss of information, but it also means you cannot view the resultant TIF files in pleb software meant for browsing vacation photos. Use DigitalMicrograph or FIJI instead.)
+1.	`Export diffraction (TIF)` writes the raw data associated with the displayed diffraction pattern as a 32-bit TIF file. Each pixel value in this file is calibrated in units of electrons. (This choice of bit depth ensures no loss of information, but it also means you cannot view the resultant TIF files in normal image software meant for browsing vacation photos. Use DigitalMicrograph or ImageJ or FIJI instead.)
 
 2.	`Export diffraction (SMV)` takes exactly what you’re seeing in the reciprocal-space window and writes the data as an SMV file suitable for programs developed for X-ray crystallography (e.g. Adxv, XDS, DIALS). If this option is selected, a pop-up window will prompt you to enter the correct metadata, which is then written directly into the 512-byte header of the SMV file.
 
