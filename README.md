@@ -37,3 +37,5 @@ Alternatively, in a python interpreter for the correct environment you can run t
 >>> import DuSC_explorer
 >>> DuSC_explorer.open_file()
 ```
+
+![GUI example](images/dusc_explorer2.png)
