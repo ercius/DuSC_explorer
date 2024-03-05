@@ -2,6 +2,9 @@
 requires = ["setuptools", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools.packages.find]
+exclude = ["images*"]
+
 [project]
 name = "DuSC_explorer"
 authors = [{name = "Peter Ercius", email="percius@lbl.gov"}]
