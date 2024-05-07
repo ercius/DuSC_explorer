@@ -21,7 +21,7 @@ After the selected file is loaded, the program takes the compressed HDF5 file an
 
 ![non-ragged_array size](images/tutorial_non_ragged_array_size.png "Command line output")
 
-Always check to ensure that this expansion does not take up too much of computer’s RAM. In this example (scanning nanobeam electron diffraction on a molecular crystal), the non-ragged array size is only around 0.3 GB leading to ~1GB of full RAM required, which is relatively lightweight. For other types of 4D-STEM datasets, however, this value can easily exceed 10 GB, which will render operation of the GUI very slow if your RAM is insufficient.
+Always check to ensure that this expansion does not take up too much of your computer’s RAM. In this example (scanning nanobeam electron diffraction on a molecular crystal), the non-ragged array size is only around 0.3 GB leading to ~1GB of full RAM required, which is relatively lightweight. For other types of 4D-STEM datasets, however, this value can easily exceed 10 GB, which will render operation of the GUI very slow if your RAM is insufficient.
 
 ![initial GUI](images/tutorial_initial_gui.png "GUI loaded")
 
