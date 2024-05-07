@@ -17,13 +17,13 @@ A pop-up window will then prompt you to load the sparse 4D-STEM dataset from a s
 
 ![Open a file](images/tutorial_open_file.png "Open a file.")
 
-After the selected file is loaded, the program takes the compressed HDF5 file and partially expands it from sparse to into a "non-ragged array" whose size is printed in the command-line output. 3 versions of this array are produced to improve performance.
+After the selected file is loaded, the program takes the compressed HDF5 file and partially expands it from sparse data to a "non-ragged array" whose size is printed in the command-line output. 3 versions of this array are produced to improve performance.
 
 ![non-ragged_array size](images/tutorial_non_ragged_array_size.png "Command line output")
 
 Always check to ensure that this expansion does not take up too much of computer’s RAM. In this example (scanning nanobeam electron diffraction on a molecular crystal), the non-ragged array size is only around 0.3 GB leading to ~1GB of full RAM required, which is relatively lightweight. For other types of 4D-STEM datasets, however, this value can easily exceed 10 GB, which will render operation of the GUI very slow if your RAM is insufficient.
 
-![initial GUI](images/initial_gui.png "GUI loaded")
+![initial GUI](images/tutorial_initial_gui.png "GUI loaded")
 
 After the GUI loads the dataset, you’ll see two interactive windows: a virtual dark-field image (real space) on the left, and a diffraction pattern (reciprocal space) on the right. The two boxes correspond to customizable real-space and reciprocal-space virtual apertures. Use the rhombus-shaped handles in the bottom right corners of the two boxes to adjust their dimensions. To adjust their positions, click in the middle and drag.
 
