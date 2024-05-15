@@ -5,11 +5,13 @@ author: Peter Ercius
 """
 
 from pathlib import Path
+from datetime import datetime
 
 import pyqtgraph as pg
+from pyqtgraph.graphicsItems.ROI import Handle
 import numpy as np
 from tifffile import imsave
-from numba import jit
+from numba import jit, prange
 from numba.types.containers import UniTuple
 import stempy.io as stio
 
@@ -22,7 +24,7 @@ try:
 except ImportError:
     print("Cupy not detected")
 
-class fourD(QWidget):
+class DuSC(QWidget):
 
     def __init__(self, *args, **kwargs):
 
@@ -42,14 +44,15 @@ class fourD(QWidget):
         self.dp = None
         self.rs = None
         self.log_diffraction = True
+        self.handle_size = 10
+        self.file_path = None  # the pathlib.Path for the file
+        
+        self.available_colormaps = ['viridis', 'inferno', 'plasma', 'magma','cividis','CET-C5','CET-C5s']
+        self.colormap = 'viridis' # default colormap
 
-        self.available_colormaps = ['thermal', 'flame', 'yellowy', 'bipolar', 'spectrum', 'cyclic', 'greyclip', 'grey',
-                                    'viridis', 'inferno', 'plasma', 'magma']
-        self.colormap = 'viridis'
-
-        super(fourD, self).__init__(*args, *kwargs)
-        self.setWindowTitle("Stempy: Sparse 4D Data Explorer")
-        self.setWindowIcon(QtGui.QIcon('MF_logo_only_small.ico'))
+        super(DuSC, self).__init__(*args, *kwargs)
+        self.setWindowTitle("DuSC: Dual Space Crystallography Explorer")
+        self.setWindowIcon(QtGui.QIcon('./DuSC_explorer/DuSC_icon_small.ico'))
 
         # Set the update strategy to the JIT version
         self.update_real = self.update_real_jit
@@ -62,20 +65,22 @@ class fourD(QWidget):
         self.view2 = self.graphics.addViewBox(row=0, col=1, invertY=True)
 
         self.real_space_image_item = pg.ImageItem(border=pg.mkPen('w'))
-        self.real_space_image_view = pg.ImageView(imageItem=self.real_space_image_item)
+        #self.real_space_image_view = pg.ImageView(imageItem=self.real_space_image_item)
         self.view.addItem(self.real_space_image_item)
         self.real_space_image_item.setImage(np.zeros((100, 100), dtype=np.uint32))
         self.view.setAspectLocked()
-        self.real_space_image_view.setPredefinedGradient('viridis')
-
-        self.diffraction_pattern_imageview = pg.ImageItem(border=pg.mkPen('w'))
-        self.diffraction_space_image_view = pg.ImageView(imageItem=self.diffraction_pattern_imageview)
-        self.view2.addItem(self.diffraction_pattern_imageview)
-        self.diffraction_pattern_imageview.setImage(np.zeros((100, 100), dtype=np.uint32))
+        #self.real_space_image_view.setPredefinedGradient('viridis')
+        self.real_space_image_item.setColorMap(self.colormap)
+        
+        self.diffraction_pattern_image_item = pg.ImageItem(border=pg.mkPen('w'))
+        #self.diffraction_space_image_view = pg.ImageView(imageItem=self.diffraction_pattern_imageview)
+        self.view2.addItem(self.diffraction_pattern_image_item)
+        self.diffraction_pattern_image_item.setImage(np.zeros((100, 100), dtype=np.uint32))
         self.view2.setAspectLocked()
-        self.diffraction_space_image_view.setPredefinedGradient('viridis')
-
-        self.diffraction_pattern_imageview.setOpts(axisOrder="row-major")
+        #self.diffraction_space_image_view.setPredefinedGradient('viridis')
+        self.diffraction_pattern_image_item.setColorMap(self.colormap)
+        
+        self.diffraction_pattern_image_item.setOpts(axisOrder="row-major")
         self.real_space_image_item.setOpts(axisOrder="row-major")
 
         self.statusBar = QStatusBar()
@@ -125,6 +130,11 @@ class fourD(QWidget):
         self.diffraction_space_roi = pg.RectROI(pos=(0, 0), size=(10, 10),
                                                 translateSnap=True, snapSize=1, scaleSnap=True,
                                                 removable=False, invertible=False, pen='g')
+        for hh in self.diffraction_space_roi.getHandles() + self.real_space_roi.getHandles():
+            hh.radius = self.handle_size
+            hh.buildPath()
+            hh.update()
+
         self.view2.addItem(self.diffraction_space_roi)
 
         # self.open_file()
@@ -136,6 +146,7 @@ class fourD(QWidget):
 
     def _update_position_message(self):
         self.statusBar.showMessage(
+            f'{self.file_path.name}; '
             f'Real: ({int(self.real_space_roi.pos().y())}, {int(self.real_space_roi.pos().x())}), '
             f'({int(self.real_space_roi.size().y())}, {int(self.real_space_roi.size().x())}); '
             f'Diffraction: ({int(self.diffraction_space_roi.pos().y())}, {int(self.diffraction_space_roi.pos().x())}), '
@@ -144,9 +155,44 @@ class fourD(QWidget):
 
     def _on_use_colormap(self):
         action = self.sender()
-        self.diffraction_space_image_view.setPredefinedGradient(action.text())
-        self.real_space_image_view.setPredefinedGradient(action.text())
+        self.diffraction_pattern_image_item.setColorMap(action.text())
+        self.real_space_image_item.setColorMap(action.text())
+    
+    def SMV_popup(self):
+        """Generate pop-up window where user can input correct metadata written to SMV file"""
+        self.popUp = QDialog(self)
+        self.popUp.setWindowTitle("Input metadata for SMV")
 
+        # defaults: 300 keV, 85 mm indicated CL = 110 mm corrected, unbinned 0.01 mm pixel size, assume dead center
+        self.setting1 = QLineEdit("0.0197")
+        self.setting2 = QLineEdit("110")
+        self.setting3 = QLineEdit("0.01")
+        self.setting4 = QLineEdit("288")
+        self.setting5 = QLineEdit("288")
+
+        popUpLayout = QFormLayout()
+        popUpLayout.addRow('Wavelength (angstroms)', self.setting1)
+        popUpLayout.addRow('Camera length (mm)', self.setting2)
+        popUpLayout.addRow('Physical pixel size (mm)', self.setting3)
+        popUpLayout.addRow('Beam center x (pixels)', self.setting4)
+        popUpLayout.addRow('Beam center y (pixels)', self.setting5)
+        save_button = QPushButton('Save')
+        save_button.clicked.connect(self.close_SMV_popup)
+        popUpLayout.addWidget(save_button)
+
+        self.popUp.setLayout(popUpLayout)
+        self.popUp.exec()
+
+    def close_SMV_popup(self):
+        """Save input and close pop-up window"""
+        self.wavelength = self.setting1.text()
+        self.CL = self.setting2.text()
+        self.pixelsize = self.setting3.text()
+        self.centerx = self.setting4.text()
+        self.centery = self.setting5.text()
+
+        self.popUp.close()
+    
     def _on_export(self):
         """Export the shown diffraction pattern as raw data in TIF file format"""
         action = self.sender()
@@ -156,6 +202,7 @@ class fourD(QWidget):
         if 'TIF' in action.text():
             fd.setNameFilter("TIF (*.tif)")
         elif 'SMV' in action.text():
+            self.SMV_popup()
             fd.setNameFilter("IMG (*.IMG)")
         fd.setDirectory(str(self.current_dir))
         fd.setFileMode(pg.FileDialog.AnyFile)
@@ -211,28 +258,34 @@ class fourD(QWidget):
         with open(out_path, 'wb') as f0:
             f0.write(np.zeros(512, dtype=np.uint8))
         # Write the header over the zeros as needed
-        with open(out_path, 'r+') as f0:
+        with open(out_path, 'r+', newline='\n') as f0:
             f0.write("{\nHEADER_BYTES=512;\n")
             f0.write("DIM=2;\n")
             f0.write("BYTE_ORDER=little_endian;\n")
             f0.write(f"TYPE={dtype};\n")
             f0.write(f"SIZE1={im.shape[1]};\n")  # size1 is columns
             f0.write(f"SIZE2={im.shape[0]};\n")  # size 2 is rows
-            f0.write(f"PIXEL_SIZE={pixel_size};\n") # physical pixel size in micron
-            f0.write(f"WAVELENGTH={lamda};\n") # wavelength
-            if mag:
-                f0.write(f"DISTANCE={int(mag)};\n")
+            f0.write(f"PIXEL_SIZE={self.pixelsize};\n")  # physical pixel size in micron
+            f0.write(f"WAVELENGTH={self.wavelength};\n")  # wavelength
+            f0.write(f"DISTANCE={self.CL};\n")
             f0.write("PHI=0.0;\n")
-            f0.write("BEAM_CENTER_X=1.0;\n")
-            f0.write("BEAM_CENTER_Y=1.0;\n")
+            f0.write(f"BEAM_CENTER_X={self.centerx};\n")
+            f0.write(f"BEAM_CENTER_Y={self.centery};\n")
             f0.write("BIN=1x1;\n")
-            f0.write("DATE=Thu Oct 21 23:06:09 2021;\n")
-            f0.write("DETECTOR_SN=unknown;\n")
+            f0.write(f"DATE={str(datetime.now())};\n")
+            f0.write("DETECTOR_SN=1;\n")  # detector serial number
             f0.write("OSC_RANGE=1.0;\n")
             f0.write("OSC_START=0;\n")
             f0.write("IMAGE_PEDESTAL=0;\n")
             f0.write("TIME=10.0;\n")
             f0.write("TWOTHETA=0;\n")
+
+            # Append coordinates and size of real-space box so there is a permanent record of this in metadata
+            f0.write(f"4DCAMERA_REAL_X={int(self.real_space_roi.pos().x())};\n")
+            f0.write(f"4DCAMERA_REAL_Y={int(self.real_space_roi.pos().y())};\n")
+            f0.write(f"4DCAMERA_BOXSIZE_X={int(self.real_space_roi.size().x())};\n")
+            f0.write(f"4DCAMERA_BOXSIZE_Y={int(self.real_space_roi.size().y())};\n")
+            f0.write(f"4DCAMERA_FILENAME={self.file_path.name};\n")
             f0.write("}\n")
         # Append the binary image data at the end of the header
         with open(out_path, 'rb+') as f0:
@@ -255,8 +308,8 @@ class fourD(QWidget):
         if fd.exec_():
             file_names = fd.selectedFiles()
             self.current_dir = Path(file_names[0]).parent
-
-            self.setData(Path(file_names[0]))
+            self.file_path = Path(file_names[0])
+            self.setData(self.file_path)
 
     @staticmethod
     def temp(aa):
@@ -302,6 +355,7 @@ class fourD(QWidget):
         self.fr_full_3d = self.fr_full.reshape((*self.scan_dimensions, self.num_frames_per_scan, self.fr_full.shape[1]))
 
         print('non-ragged array size = {} GB'.format(self.fr_full.nbytes / 1e9))
+        print('Full memory requirement = {} GB'.format(3 * self.fr_full.nbytes / 1e9))
 
         # Find the row and col for each electron strike
         self.fr_rows = (self.fr_full // 576).reshape(self.scan_dimensions[0] * self.scan_dimensions[1], self.num_frames_per_scan, mm)
@@ -316,12 +370,15 @@ class fourD(QWidget):
         self.real_space_limit = QRectF(0, 0, self.scan_dimensions[1], self.scan_dimensions[0])
         self.real_space_roi.maxBounds = self.real_space_limit
 
-        self.real_space_roi.setSize([ii // 4 for ii in self.scan_dimensions])
-        self.diffraction_space_roi.setSize([ii // 4 for ii in self.frame_dimensions])
+        self.real_space_roi.setSize([ii // 4 for ii in self.scan_dimensions][::-1])
+        self.diffraction_space_roi.setSize([ii // 4 for ii in self.frame_dimensions][::-1])
 
-        self.real_space_roi.setPos([ii // 4 + ii //8 for ii in self.scan_dimensions])
-        self.diffraction_space_roi.setPos([ii // 4 + ii // 8 for ii in self.frame_dimensions])
-                
+        self.real_space_roi.setPos([ii // 4 + ii //8 for ii in self.scan_dimensions][::-1])
+        self.diffraction_space_roi.setPos([ii // 4 + ii // 8 for ii in self.frame_dimensions][::-1])
+
+        self.update_real()
+        self.update_diffr()
+         
         self.statusBar.showMessage('loaded {}'.format(fPath.name))
 
     def update_diffr_stempy(self):
@@ -332,9 +389,9 @@ class fourD(QWidget):
         self.dp = self.dp.sum(axis=(0, 1))
 
         if self.log_diffraction:
-            self.diffraction_pattern_imageview.setImage(np.log(self.dp + 1), autoRange=True)
+            self.diffraction_pattern_image_item.setImage(np.log(self.dp + 1), autoRange=True)
         else:
-            self.diffraction_pattern_imageview.setImage(self.dp, autoRange=True)
+            self.diffraction_pattern_image_item.setImage(self.dp, autoRange=True)
 
     def update_diffr_jit(self):
         self.dp[:] = self.getDenseFrame_jit(
@@ -344,9 +401,9 @@ class fourD(QWidget):
 
         im = self.dp.reshape(self.frame_dimensions)
         if self.log_diffraction:
-            self.diffraction_pattern_imageview.setImage(np.log(im + 1), autoRange=True)
+            self.diffraction_pattern_image_item.setImage(np.log(im + 1), autoRange=True)
         else:
-            self.diffraction_pattern_imageview.setImage(im, autoRange=True)
+            self.diffraction_pattern_image_item.setImage(im, autoRange=True)
 
     def update_real_stempy(self):
         """ Update the real space image by summing in diffraction space
@@ -394,17 +451,17 @@ class fourD(QWidget):
         im = np.zeros(rows.shape[0], dtype=np.uint32)
         
         # For each scan position (ii) sum all events (kk) in each frame (jj)
-        for ii in range(im.shape[0]):
+        for ii in prange(im.shape[0]):
             ss = 0
             for jj in range(rows.shape[1]):
-            	for kk in range(rows.shape[2]):
-	                t1 = rows[ii, jj, kk] > left
-	                t2 = rows[ii, jj, kk] < right
-	                t3 = cols[ii, jj, kk] > bot
-	                t4 = cols[ii, jj, kk] < top
-	                t5 = t1 * t2 * t3 * t4
-	                if t5:
-	                    ss += 1
+                for kk in range(rows.shape[2]):
+                    t1 = rows[ii, jj, kk] > left
+                    t2 = rows[ii, jj, kk] < right
+                    t3 = cols[ii, jj, kk] > bot
+                    t4 = cols[ii, jj, kk] < top
+                    t5 = t1 * t2 * t3 * t4
+                    if t5:
+                        ss += 1
             im[ii] = ss
         return im
 
@@ -431,10 +488,10 @@ class fourD(QWidget):
         """
         dp = np.zeros((frame_dimensions[0] * frame_dimensions[1]), np.uint32)
         # nested for loop for: scan_dimension0, scan_dimension1, num_frame, event
-        for ii in range(frames.shape[0]):
-            for jj in range(frames.shape[1]):
-                for kk in range(frames.shape[2]):
-                    for ll in range(frames.shape[3]):
+        for ii in prange(frames.shape[0]):
+            for jj in prange(frames.shape[1]):
+                for kk in prange(frames.shape[2]):
+                    for ll in prange(frames.shape[3]):
                         pos = frames[ii, jj, kk, ll]
                         if pos > 0:
                             dp[pos] += 1
@@ -554,8 +611,13 @@ def main():
     """Main function used to start the GUI."""
     
     qapp = QApplication([])
-#     fourD_view = fourD()
-    print('gpu version')
-    fourD_view = fourD_gpu()
-    fourD_view.show()
+# Uncomment this to use GPU version
+# Need to make this switchable
+# There is a new class that uses cupy with 
+#  the original class as a base.
+#    print('gpu version')
+#    fourD_view = fourD_gpu()
+#    fourD_view.show()
+    DuSC_view = DuSC()
+    DuSC_view.show()
     qapp.exec_()

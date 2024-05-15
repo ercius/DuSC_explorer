@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+exclude = ["images*"]
+
+[project]
+name = "DuSC_explorer"
+authors = [{name = "Peter Ercius", email="percius@lbl.gov"}]
+description = "Graphical user interface to view Dual Space Crystallography data from the 4D Camera of the Molecular Foundry."
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = ['stempy>=3.0', 'pyqtgraph>=0.13', 'tifffile', 'h5py>=2.9.0', 'numpy', 'qtpy', 'numba>=0.56', 'PyQt5']
+version = "1.0.1"
+
+[project.scripts]
+DuSC_explorer = "DuSC_explorer:open_file"
