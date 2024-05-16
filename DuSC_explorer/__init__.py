@@ -6,6 +6,7 @@ author: Peter Ercius
 
 from pathlib import Path
 from datetime import datetime
+import argparse
 
 import pyqtgraph as pg
 from pyqtgraph.graphicsItems.ROI import Handle
@@ -23,6 +24,11 @@ try:
     import cupy as cp
 except ImportError:
     print("Cupy not detected")
+
+# Add argument for gpu mode
+parser = argparse.argumentParser()
+parse.add_argument('--gpu', dest='gpu_mode', action='store_true')
+args = parser.parse_args()
 
 class DuSC(QWidget):
 
