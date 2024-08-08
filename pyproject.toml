@@ -12,7 +12,7 @@ description = "Graphical user interface to view Dual Space Crystallography data 
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = ['stempy>=3.0', 'pyqtgraph>=0.13', 'tifffile', 'h5py>=2.9.0', 'numpy', 'qtpy', 'numba>=0.56', 'PyQt5']
-version = "1.0.1"
+version = "1.1"
 
 [project.scripts]
 DuSC_explorer = "DuSC_explorer:open_file"
