@@ -503,7 +503,7 @@ class DuSC(QWidget):
                             dp[pos] += 1
         return dp
 
-class fourD_gpu(fourD):
+class DuSC_gpu(fourD):
     def __init__(self, *args, **kwargs):
         
         self.get_image_cupy_3 = cp.ElementwiseKernel(
@@ -617,13 +617,12 @@ def main():
     """Main function used to start the GUI."""
     
     qapp = QApplication([])
-# Uncomment this to use GPU version
-# Need to make this switchable
-# There is a new class that uses cupy with 
-#  the original class as a base.
-#    print('gpu version')
-#    fourD_view = fourD_gpu()
-#    fourD_view.show()
-    DuSC_view = DuSC()
+
+    # Choose CPU or GPU version of the code
+    if not args.gpu_mode:
+        DuSC_view = DuSC()
+    else:
+        print('GPU mode enable. Must have cupy installed')
+        DuSC_view = DuSC_gpu()
     DuSC_view.show()
     qapp.exec_()
