@@ -236,9 +236,9 @@ class DuSC(QWidget):
         self.scalebar_left_button.setChecked(False)
         self.scalebar_right_button.setChecked(False)
         self.scalebar_none_button.setChecked(True)
-        self.scalebar_button_group.setExclusive(True)
+        self.scalebar_button_group.setExclusive(True
         
-        # Remove existing concentric rings and labels
+        # Remove concentric rings and labels
         for ring in getattr(self, 'rings', []):
             self.view2.removeItem(ring)
         for label in getattr(self, 'labels', []):
@@ -248,12 +248,10 @@ class DuSC(QWidget):
         
         # Reinitialize concentric rings
         self.add_concentric_rings()
-
-        # Update the scale bar labels
         self.update_scalebar_labels()
-        
-        # Update the status bar message
+                                                
         self.statusBar.showMessage("View reset to full display.")
+                                                
     def show_metadata_dialog(self):
         self.popUp = QDialog(self)
         self.popUp.setWindowTitle("Input Metadata")
@@ -631,10 +629,12 @@ class DuSC(QWidget):
         color = 'white'
         font_size = 12
 
+
         if not hasattr(self, 'real_space_scale_bar') or self.real_space_scale_bar is None:
             self.real_space_scale_bar, self.real_space_scale_label = self.add_scale_bar(self.view, self.real_space_image_item, color, font_size, "real")
         if not hasattr(self, 'diffraction_space_scale_bar') or self.diffraction_space_scale_bar is None:
             self.diffraction_space_scale_bar, self.diffraction_space_scale_label = self.add_scale_bar(self.view2, self.diffraction_pattern_image_item, color, font_size, "diffraction")
+
 
     # Updating the position and text of the scale bar labels
     def update_label_position(self, scale_bar, scale_label, image_item, label_text):
@@ -683,7 +683,7 @@ class DuSC(QWidget):
     def toggle_scalebar(self, position):
         if not hasattr(self, 'real_space_scale_bar') or self.real_space_scale_bar is None:
             self.add_scale_bars()
-    
+                                                
         if self.real_space_scale_bar and self.real_space_scale_label:
             self.set_scale_bar_position(self.real_space_scale_bar, self.real_space_scale_label, self.real_space_image_item, position)
         if self.diffraction_space_scale_bar and self.diffraction_space_scale_label:
@@ -887,3 +887,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
