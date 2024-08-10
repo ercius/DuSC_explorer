@@ -352,12 +352,18 @@ class DuSC(QWidget):
         self.popUp.setWindowTitle("Input metadata for SMV")
 
         # defaults: 300 keV, 85 mm indicated CL = 110 mm corrected, unbinned 0.01 mm pixel size, assume dead center
-        self.setting1 = QLineEdit("0.0197")
-        self.setting2 = QLineEdit("110")
-        self.setting3 = QLineEdit("0.01")
-        self.setting4 = QLineEdit("288")
-        self.setting5 = QLineEdit("288")
+        #self.setting1 = QLineEdit("0.0197")
+        #self.setting2 = QLineEdit("110")
+        #self.setting3 = QLineEdit("0.01")
+        #self.setting4 = QLineEdit("288")
+        #self.setting5 = QLineEdit("288")
 
+        self.setting1 = QLineEdit(str(self.wavelength))
+        self.setting2 = QLineEdit(str(self.camera_length_mm))
+        self.setting3 = QLineEdit(str(self.physical_pixel_size_mm))
+        self.setting4 = QLineEdit(str(self.centerx))
+        self.setting5 = QLineEdit(str(self.centery))
+        
         popUpLayout = QFormLayout()
         popUpLayout.addRow('Wavelength (angstroms)', self.setting1)
         popUpLayout.addRow('Camera length (mm)', self.setting2)
