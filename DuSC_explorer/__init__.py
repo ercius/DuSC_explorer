@@ -18,14 +18,12 @@ from qtpy.QtWidgets import *
 from qtpy.QtCore import QRectF
 from qtpy import QtGui
 
-
 from pyqtgraph.Qt import QtCore
 from PyQt5.QtCore import Qt
 from pyqtgraph.graphicsItems.GridItem import GridItem
 from qtpy.QtWidgets import QApplication
-import sys
 
-# Add parameter for after file. Under parameters put metadata and scalebar on/off. If you click metadata under parameters, input metadata with an ok and apply at the bottom. If they dont input metadata, make sure scalebar is in terms of pixels. it changes once input data is presented. Formula: sin*theta over lambda = 1/ 2d
+
 class DuSC(QWidget):
 
     def __init__(self, *args, **kwargs):
@@ -94,7 +92,8 @@ class DuSC(QWidget):
 
         self.statusBar = QStatusBar()
         self.statusBar.showMessage("Starting up...")
-        #Adding gridlines to the both real and diffraction space
+        
+        # Add gridlines to the both real and diffraction space
         self.real_space_grid = GridItem()
         self.diffraction_space_grid = GridItem()
         self.view.addItem(self.real_space_grid)
@@ -114,7 +113,8 @@ class DuSC(QWidget):
         reset_view = QAction('Reset', self)
         reset_view.triggered.connect(self.reset_view)
         menu_bar_file.addAction(reset_view)
-        #Under the new 'Parameters' section I have added an 'Input Metadata' pop up, copying directly from the already created code under the 'Export diffraction (SMV) option. I also added a 'Scalebar' option, allowing the user to take the scalebar away if they wish. 
+        
+        # Add 'Parameters' section with 'Input Metadata' pop up
         metadata_action = QAction('Input Metadata', self)
         metadata_action.triggered.connect(self.show_metadata_dialog)
         menu_bar_parameter.addAction(metadata_action)
@@ -135,7 +135,9 @@ class DuSC(QWidget):
         toggle_log_action.triggered.connect(self._on_log)
         menu_bar_display.addAction(toggle_log_action)
 
-        # I added a scalebar with checkable push buttons to allow the object to be displayable on the left or right hand side of both images, while also allowing the user to have an option of non-display. 
+        # Add a scalebar with checkable push buttons to allow the object to be
+        # displayable on the left or right hand side of both images, while also 
+        # allowing the user to have an option of non-display. 
         scalebar_display = QLabel('Scalebar:')
         self.scalebar_left_button = QPushButton('Left', self)
         self.scalebar_right_button = QPushButton('Right', self)
@@ -236,7 +238,7 @@ class DuSC(QWidget):
         self.scalebar_left_button.setChecked(False)
         self.scalebar_right_button.setChecked(False)
         self.scalebar_none_button.setChecked(True)
-        self.scalebar_button_group.setExclusive(True
+        self.scalebar_button_group.setExclusive(True)
         
         # Remove concentric rings and labels
         for ring in getattr(self, 'rings', []):
@@ -267,8 +269,8 @@ class DuSC(QWidget):
         popUpLayout.addRow('Wavelength (angstroms)', self.setting1)
         popUpLayout.addRow('Camera length (mm)', self.setting2)
         popUpLayout.addRow('Physical pixel size (mm)', self.setting3)
-        popUpLayout.addRow('Beam center x (pixels)', self.setting4)
-        popUpLayout.addRow('Beam center y (pixels)', self.setting5)
+        popUpLayout.addRow('Beam center row (pixels)', self.setting5)
+        popUpLayout.addRow('Beam center column (pixels)', self.setting4)
 
         # I created push buttons allowing the user to choose between various units for their respective rings
         unit_label = QLabel('Resolution Rings:')
@@ -319,7 +321,7 @@ class DuSC(QWidget):
         self.wavelength = float(self.setting1.text())
         self.camera_length_mm = float(self.setting2.text())
         self.physical_pixel_size_mm = float(self.setting3.text())
-        self.centerx = int(self.setting4.text())
+        self.centerx = int(self.setting4.text()) 
         self.centery = int(self.setting5.text())
 
         self.popUp.close()
@@ -347,19 +349,20 @@ class DuSC(QWidget):
         self.popUp = QDialog(self)
         self.popUp.setWindowTitle("Input metadata for SMV")
 
-        # defaults: 300 keV, 85 mm indicated CL = 110 mm corrected, unbinned 0.01 mm pixel size, assume dead center
-        self.setting1 = QLineEdit("0.0197")
-        self.setting2 = QLineEdit("110")
-        self.setting3 = QLineEdit("0.01")
-        self.setting4 = QLineEdit("288")
-        self.setting5 = QLineEdit("288")
-
+        self.setting1 = QLineEdit(str(self.wavelength))
+        self.setting2 = QLineEdit(str(self.camera_length_mm))
+        self.setting3 = QLineEdit(str(self.physical_pixel_size_mm))
+        self.setting4 = QLineEdit(str(self.centerx))
+        self.setting5 = QLineEdit(str(self.centery))
+        
         popUpLayout = QFormLayout()
         popUpLayout.addRow('Wavelength (angstroms)', self.setting1)
         popUpLayout.addRow('Camera length (mm)', self.setting2)
         popUpLayout.addRow('Physical pixel size (mm)', self.setting3)
-        popUpLayout.addRow('Beam center x (pixels)', self.setting4)
-        popUpLayout.addRow('Beam center y (pixels)', self.setting5)
+
+        # Use row / col formatting for 
+        popUpLayout.addRow('Beam center row (pixels)', self.setting5)
+        popUpLayout.addRow('Beam center column (pixels)', self.setting4)
         save_button = QPushButton('Save')
         save_button.clicked.connect(self.close_SMV_popup)
         popUpLayout.addWidget(save_button)
@@ -372,8 +375,8 @@ class DuSC(QWidget):
         self.wavelength = self.setting1.text()
         self.CL = self.setting2.text()
         self.pixelsize = self.setting3.text()
-        self.centerx = self.setting4.text()
-        self.centery = self.setting5.text()
+        self.centerx = self.setting4.text() # col
+        self.centery = self.setting5.text() # row
 
         self.popUp.close()
     
@@ -418,10 +421,6 @@ class DuSC(QWidget):
 
         camera length, wavelength, and pixel_size are hard coded.
         """
-        # Hard coded metadata
-        mag = 110  # camera length in mm
-        lamda = 1.9687576525122874e-12
-        pixel_size = 10e-6  # micron
 
         im = self.dp.reshape(self.frame_dimensions)
         if im.max() > 65535:
