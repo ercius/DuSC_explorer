@@ -271,8 +271,8 @@ class DuSC(QWidget):
         popUpLayout.addRow('Wavelength (angstroms)', self.setting1)
         popUpLayout.addRow('Camera length (mm)', self.setting2)
         popUpLayout.addRow('Physical pixel size (mm)', self.setting3)
-        popUpLayout.addRow('Beam center x (pixels)', self.setting4)
-        popUpLayout.addRow('Beam center y (pixels)', self.setting5)
+        popUpLayout.addRow('Beam center row (pixels)', self.setting5)
+        popUpLayout.addRow('Beam center column (pixels)', self.setting4)
 
         # I created push buttons allowing the user to choose between various units for their respective rings
         unit_label = QLabel('Resolution Rings:')
