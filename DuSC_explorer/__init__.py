@@ -94,7 +94,8 @@ class DuSC(QWidget):
 
         self.statusBar = QStatusBar()
         self.statusBar.showMessage("Starting up...")
-        #Adding gridlines to the both real and diffraction space
+        
+        # Add gridlines to the both real and diffraction space
         self.real_space_grid = GridItem()
         self.diffraction_space_grid = GridItem()
         self.view.addItem(self.real_space_grid)
@@ -114,7 +115,8 @@ class DuSC(QWidget):
         reset_view = QAction('Reset', self)
         reset_view.triggered.connect(self.reset_view)
         menu_bar_file.addAction(reset_view)
-        #Under the new 'Parameters' section I have added an 'Input Metadata' pop up, copying directly from the already created code under the 'Export diffraction (SMV) option. I also added a 'Scalebar' option, allowing the user to take the scalebar away if they wish. 
+        
+        # Add 'Parameters' section with 'Input Metadata' pop up
         metadata_action = QAction('Input Metadata', self)
         metadata_action.triggered.connect(self.show_metadata_dialog)
         menu_bar_parameter.addAction(metadata_action)
@@ -135,7 +137,9 @@ class DuSC(QWidget):
         toggle_log_action.triggered.connect(self._on_log)
         menu_bar_display.addAction(toggle_log_action)
 
-        # I added a scalebar with checkable push buttons to allow the object to be displayable on the left or right hand side of both images, while also allowing the user to have an option of non-display. 
+        # Add a scalebar with checkable push buttons to allow the object to be
+        # displayable on the left or right hand side of both images, while also 
+        # allowing the user to have an option of non-display. 
         scalebar_display = QLabel('Scalebar:')
         self.scalebar_left_button = QPushButton('Left', self)
         self.scalebar_right_button = QPushButton('Right', self)
@@ -236,7 +240,7 @@ class DuSC(QWidget):
         self.scalebar_left_button.setChecked(False)
         self.scalebar_right_button.setChecked(False)
         self.scalebar_none_button.setChecked(True)
-        self.scalebar_button_group.setExclusive(True
+        self.scalebar_button_group.setExclusive(True)
         
         # Remove concentric rings and labels
         for ring in getattr(self, 'rings', []):
