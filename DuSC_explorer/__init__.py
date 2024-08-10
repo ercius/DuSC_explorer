@@ -323,7 +323,7 @@ class DuSC(QWidget):
         self.wavelength = float(self.setting1.text())
         self.camera_length_mm = float(self.setting2.text())
         self.physical_pixel_size_mm = float(self.setting3.text())
-        self.centerx = int(self.setting4.text())
+        self.centerx = int(self.setting4.text()) 
         self.centery = int(self.setting5.text())
 
         self.popUp.close()
@@ -362,8 +362,10 @@ class DuSC(QWidget):
         popUpLayout.addRow('Wavelength (angstroms)', self.setting1)
         popUpLayout.addRow('Camera length (mm)', self.setting2)
         popUpLayout.addRow('Physical pixel size (mm)', self.setting3)
-        popUpLayout.addRow('Beam center x (pixels)', self.setting4)
-        popUpLayout.addRow('Beam center y (pixels)', self.setting5)
+
+        # Use row / col formatting for 
+        popUpLayout.addRow('Beam center row (pixels)', self.setting5)
+        popUpLayout.addRow('Beam center column (pixels)', self.setting4)
         save_button = QPushButton('Save')
         save_button.clicked.connect(self.close_SMV_popup)
         popUpLayout.addWidget(save_button)
@@ -376,8 +378,8 @@ class DuSC(QWidget):
         self.wavelength = self.setting1.text()
         self.CL = self.setting2.text()
         self.pixelsize = self.setting3.text()
-        self.centerx = self.setting4.text()
-        self.centery = self.setting5.text()
+        self.centerx = self.setting4.text() # col
+        self.centery = self.setting5.text() # row
 
         self.popUp.close()
     
