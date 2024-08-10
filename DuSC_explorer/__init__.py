@@ -18,14 +18,12 @@ from qtpy.QtWidgets import *
 from qtpy.QtCore import QRectF
 from qtpy import QtGui
 
-
 from pyqtgraph.Qt import QtCore
 from PyQt5.QtCore import Qt
 from pyqtgraph.graphicsItems.GridItem import GridItem
 from qtpy.QtWidgets import QApplication
-import sys
 
-# Add parameter for after file. Under parameters put metadata and scalebar on/off. If you click metadata under parameters, input metadata with an ok and apply at the bottom. If they dont input metadata, make sure scalebar is in terms of pixels. it changes once input data is presented. Formula: sin*theta over lambda = 1/ 2d
+
 class DuSC(QWidget):
 
     def __init__(self, *args, **kwargs):
@@ -351,13 +349,6 @@ class DuSC(QWidget):
         self.popUp = QDialog(self)
         self.popUp.setWindowTitle("Input metadata for SMV")
 
-        # defaults: 300 keV, 85 mm indicated CL = 110 mm corrected, unbinned 0.01 mm pixel size, assume dead center
-        #self.setting1 = QLineEdit("0.0197")
-        #self.setting2 = QLineEdit("110")
-        #self.setting3 = QLineEdit("0.01")
-        #self.setting4 = QLineEdit("288")
-        #self.setting5 = QLineEdit("288")
-
         self.setting1 = QLineEdit(str(self.wavelength))
         self.setting2 = QLineEdit(str(self.camera_length_mm))
         self.setting3 = QLineEdit(str(self.physical_pixel_size_mm))
@@ -430,10 +421,6 @@ class DuSC(QWidget):
 
         camera length, wavelength, and pixel_size are hard coded.
         """
-        # Hard coded metadata
-        mag = 110  # camera length in mm
-        lamda = 1.9687576525122874e-12
-        pixel_size = 10e-6  # micron
 
         im = self.dp.reshape(self.frame_dimensions)
         if im.max() > 65535:
