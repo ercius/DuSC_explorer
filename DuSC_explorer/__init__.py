@@ -48,6 +48,13 @@ class DuSC(QWidget):
         self.log_diffraction = True
         self.handle_size = 10
         self.file_path = None  # the pathlib.Path for the file
+        self.wavelength = 0.0197
+        self.camera_length_mm = 110
+        self.physical_pixel_size_mm = 0.01
+        self.centerx = 288
+        self.centery = 288
+
+        self.unit = 'None'
         
         self.available_colormaps = ['viridis', 'inferno', 'plasma', 'magma','cividis','CET-C5','CET-C5s']
         self.colormap = 'cividis' # default colormap
@@ -182,6 +189,8 @@ class DuSC(QWidget):
             hh.update()
 
         self.view2.addItem(self.diffraction_space_roi)  
+        self.add_scale_bars()
+        self.add_concentric_rings()
         self.open_file()
 
         self.real_space_roi.sigRegionChanged.connect(self.update_diffr)
@@ -189,13 +198,6 @@ class DuSC(QWidget):
         self.real_space_roi.sigRegionChanged.connect(self._update_position_message)
         self.diffraction_space_roi.sigRegionChanged.connect(self._update_position_message)
 
-        self.wavelength = 0.0197
-        self.camera_length_mm = 110
-        self.physical_pixel_size_mm = 0.01
-        self.centerx = 288
-        self.centery = 288
-
-        self.unit = 'None'
     # Parts of this code were copied and adjusted from the SMV popup code. Will need to further adjust, so that the users input has an effect on the rings, etc. 
 
     def reset_view(self):
@@ -215,20 +217,26 @@ class DuSC(QWidget):
         self.view.setRange(self.real_space_limit)
         self.view2.setRange(self.diffraction_pattern_limit)
         
-        # Remove scalebar and labels
-        if hasattr(self, 'real_space_scale_bar'):
-            self.real_space_scale_bar.setVisible(False)
-            self.real_space_scale_label.setVisible(False)
-        if hasattr(self, 'diffraction_space_scale_bar'):
-            self.diffraction_space_scale_bar.setVisible(False)
-            self.diffraction_space_scale_label.setVisible(False)
+        # Reset metadata to initial state
+        self.wavelength = 0.0197
+        self.camera_length_mm = 110
+        self.physical_pixel_size_mm = 0.01
+        self.centerx = 288
+        self.centery = 288
+        self.unit = 'None'
+
+        # Reinitialize scale bars
+        self.add_scale_bars()
+        
+        # Hide scale bars
+        self.toggle_scalebar('none')
         
         # Uncheck scalebar buttons
         self.scalebar_button_group.setExclusive(False)
         self.scalebar_left_button.setChecked(False)
         self.scalebar_right_button.setChecked(False)
-        self.scalebar_none_button.setChecked(False)
-        self.scalebar_button_group.setExclusive(True)
+        self.scalebar_none_button.setChecked(True)
+        self.scalebar_button_group.setExclusive(True
         
         # Remove concentric rings and labels
         for ring in getattr(self, 'rings', []):
@@ -238,19 +246,12 @@ class DuSC(QWidget):
         self.rings = []
         self.labels = []
         
-        # Reset metadata to initial state
-        self.wavelength = 0.0197
-        self.camera_length_mm = 110
-        self.physical_pixel_size_mm = 0.01
-        self.centerx = 288
-        self.centery = 288
-        self.unit = 'None'
-
+        # Reinitialize concentric rings
+        self.add_concentric_rings()
         self.update_scalebar_labels()
-        
-        # Update the status bar message
+                                                
         self.statusBar.showMessage("View reset to full display.")
-            
+                                                
     def show_metadata_dialog(self):
         self.popUp = QDialog(self)
         self.popUp.setWindowTitle("Input Metadata")
@@ -600,8 +601,7 @@ class DuSC(QWidget):
         dimensions = image_item.image.shape
         scale_height = 7  # Scale height in pixels
 
-        # Scale length set to one-fifth of the total image dimension
-        scale_length = dimensions[1] / 5
+        scale_length = 100 # Scale length in pixels
 
         label = self.generate_label(space_type)
 
@@ -629,8 +629,12 @@ class DuSC(QWidget):
         color = 'white'
         font_size = 12
 
-        self.real_space_scale_bar, self.real_space_scale_label = self.add_scale_bar(self.view, self.real_space_image_item, color, font_size, "real")
-        self.diffraction_space_scale_bar, self.diffraction_space_scale_label = self.add_scale_bar(self.view2, self.diffraction_pattern_image_item, color, font_size, "diffraction")
+
+        if not hasattr(self, 'real_space_scale_bar') or self.real_space_scale_bar is None:
+            self.real_space_scale_bar, self.real_space_scale_label = self.add_scale_bar(self.view, self.real_space_image_item, color, font_size, "real")
+        if not hasattr(self, 'diffraction_space_scale_bar') or self.diffraction_space_scale_bar is None:
+            self.diffraction_space_scale_bar, self.diffraction_space_scale_label = self.add_scale_bar(self.view2, self.diffraction_pattern_image_item, color, font_size, "diffraction")
+
 
     # Updating the position and text of the scale bar labels
     def update_label_position(self, scale_bar, scale_label, image_item, label_text):
@@ -657,24 +661,29 @@ class DuSC(QWidget):
     def set_scale_bar_position(self, scale_bar, scale_label, image_item, position, offset=20):
         if position == 'left':
             x_pos = offset
+            scale_bar.setVisible(True)
+            scale_label.setVisible(True)
         elif position == 'right':
             x_pos = image_item.width() - scale_bar.boundingRect().width() - offset
-        else:
+            scale_bar.setVisible(True)
+            scale_label.setVisible(True)
+        else:  # 'none'
             scale_bar.setVisible(False)
             scale_label.setVisible(False)
             return
 
         y_pos = image_item.height() - scale_bar.boundingRect().height()
         scale_bar.setPos(x_pos, y_pos)
-        scale_bar.setVisible(True)
 
         scale_length = scale_bar.boundingRect().width()
         label_x = x_pos + scale_length / 2 - scale_label.boundingRect().width() / 2
         label_y = image_item.height() - scale_label.boundingRect().height() - 35
         scale_label.setPos(label_x, label_y)
-        scale_label.setVisible(True)
 
     def toggle_scalebar(self, position):
+        if not hasattr(self, 'real_space_scale_bar') or self.real_space_scale_bar is None:
+            self.add_scale_bars()
+                                                
         if self.real_space_scale_bar and self.real_space_scale_label:
             self.set_scale_bar_position(self.real_space_scale_bar, self.real_space_scale_label, self.real_space_image_item, position)
         if self.diffraction_space_scale_bar and self.diffraction_space_scale_label:
@@ -877,10 +886,5 @@ def main():
     qapp.exec_()
 
 if __name__ == '__main__':
-    
-    app = QApplication(sys.argv)
-    window = DuSC()
-    window.add_scale_bars()
-    window.add_concentric_rings()
-    window.show()
-    sys.exit(app.exec_())
+    main()
+
