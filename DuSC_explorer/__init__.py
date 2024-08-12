@@ -540,8 +540,8 @@ class DuSC(QWidget):
         print('Full memory requirement = {} GB'.format(3 * self.fr_full.nbytes / 1e9))
 
         # Find the row and col for each electron strike
-        self.fr_rows = (self.fr_full // 576).reshape(self.scan_dimensions[0] * self.scan_dimensions[1], self.num_frames_per_scan, mm)
-        self.fr_cols = (self.fr_full  % 576).reshape(self.scan_dimensions[0] * self.scan_dimensions[1], self.num_frames_per_scan, mm)
+        self.fr_rows = (self.fr_full // self.frame_dimensions[0]).reshape(self.scan_dimensions[0] * self.scan_dimensions[1], self.num_frames_per_scan, mm)
+        self.fr_cols = (self.fr_full  % self.frame_dimensions[1]).reshape(self.scan_dimensions[0] * self.scan_dimensions[1], self.num_frames_per_scan, mm)
 
         self.dp = np.zeros(self.frame_dimensions[0] * self.frame_dimensions[1], np.uint32)
         self.rs = np.zeros(self.scan_dimensions[0] * self.scan_dimensions[1], np.uint32)
@@ -807,11 +807,11 @@ class DuSC(QWidget):
         Parameters
         ----------
         rows : 2D ndarray, (M, num_frames, N)
-            The row of the electron strike location. Floor divide by 576. M is
+            The row of the electron strike location. Floor divide by frame_dimenions[0]. M is
             the raveled scan_dimensions axis and N is the zero-padded electron
             strike position location.
         cols : 2D ndarray, (M, num_frames, N)
-            The column of the electron strike locations. Modulo divide by 576
+            The column of the electron strike locations. Modulo divide by frame_dimensions[1]
         left, right, bot, top : int
             The locations of the edges of the boxes
 
