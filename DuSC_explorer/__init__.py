@@ -540,8 +540,8 @@ class DuSC(QWidget):
         print('Full memory requirement = {} GB'.format(3 * self.fr_full.nbytes / 1e9))
 
         # Find the row and col for each electron strike
-        self.fr_rows = (self.fr_full // self.frame_dimensions[0]).reshape(self.scan_dimensions[0] * self.scan_dimensions[1], self.num_frames_per_scan, mm)
-        self.fr_cols = (self.fr_full  % self.frame_dimensions[1]).reshape(self.scan_dimensions[0] * self.scan_dimensions[1], self.num_frames_per_scan, mm)
+        self.fr_rows = (self.fr_full // int(self.frame_dimensions[0])).reshape(self.scan_dimensions[0] * self.scan_dimensions[1], self.num_frames_per_scan, mm)
+        self.fr_cols = (self.fr_full  % int(self.frame_dimensions[1])).reshape(self.scan_dimensions[0] * self.scan_dimensions[1], self.num_frames_per_scan, mm)
 
         self.dp = np.zeros(self.frame_dimensions[0] * self.frame_dimensions[1], np.uint32)
         self.rs = np.zeros(self.scan_dimensions[0] * self.scan_dimensions[1], np.uint32)
@@ -565,6 +565,7 @@ class DuSC(QWidget):
         # 5 rings, distance between each ring is around 50 pixels
         # Attempting to incorporate a scale bar into both real space and diffraction space images
         # Method I utilized to generate a picture of the scale bar
+    
     def generate_picture(self, length, height, label, color, font_size):
         picture = QtGui.QPicture()
         painter = QtGui.QPainter(picture)
