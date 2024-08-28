@@ -13,8 +13,8 @@ from pathlib import Path
 import pyqtgraph as pg
 from pyqtgraph.graphicsItems.ROI import Handle
 import numpy as np
-from scipy import ndimage
-import ncempy 
+#from scipy import ndimage
+#import ncempy 
 #from tifffile import imwrite
 import h5py
 import hdf5plugin
@@ -223,7 +223,7 @@ class fourD(QWidget):
         
         self.open_file()
         
-        self.real_space_roi.addRotateHandle((0, 0), (0.5, 0.5))
+        # self.real_space_roi.addRotateHandle((0, 0), (0.5, 0.5))
         
         self.real_space_roi.sigRegionChanged.connect(self.update_diffr)
         self.diffraction_space_roi.sigRegionChanged.connect(self.update_real)
@@ -243,7 +243,7 @@ class fourD(QWidget):
         """
 
         fd = pg.FileDialog()
-        fd.setNameFilter("Sparse Stempy (*.dm3 *.dm4, *.hdf5, *.h5)")
+        fd.setNameFilter("Dectis (*.hdf5, *.h5)")
         fd.setDirectory(str(self.current_dir))
         fd.setFileMode(pg.FileDialog.ExistingFile)
 
@@ -314,26 +314,31 @@ class fourD(QWidget):
         """ Update the diffraction space image by summing in real space
         """
         # Get the region of the real space ROI
-        out = self.real_space_roi.getArrayRegion(self.dp, self.real_space_image_item,returnMappedCoords=True,order=0)
+        #out = self.real_space_roi.getArrayRegion(self.dp, self.real_space_image_item,returnMappedCoords=True,order=0)
+
         # Setup a mask with the correct dimensions
-        mask = np.zeros(self.scan_dimensions, dtype=bool)
-        mask[np.round(out[1][0].astype(np.uint16)), np.round(out[1][1]).astype(np.uint16)] = 1
-        ndimage.binary_closing(mask, output=mask)
+        #mask = np.zeros(self.scan_dimensions, dtype=bool)
+        #mask[np.round(out[1][0].astype(np.uint16)), np.round(out[1][1]).astype(np.uint16)] = 1
+        #ndimage.binary_closing(mask, output=mask)
         
-        out2 = self.real_space_roi.getArraySlice(self.dp, self.real_space_image_item)
+        #out2 = self.real_space_roi.getArraySlice(self.dp, self.real_space_image_item)
 
-        temp = self.sa[out2[0][0],out2[0][1],:,:]
-        mask = mask[out2[0][0],out2[0][1]]
-        self.dp = temp.sum(axis=(0,1),where=mask[:,:,None,None], dtype=np.uint16)
-
+        #temp = self.sa[out2[0][0],out2[0][1],:,:]
+        #mask = mask[out2[0][0],out2[0][1]]
+        #self.dp = temp.sum(axis=(0,1), dtype=np.uint64)
+        
+        self.dp = self.sa[int(self.real_space_roi.pos().y()) - 0:int(self.real_space_roi.pos().y() + self.real_space_roi.size().y()) + 1,
+                   int(self.real_space_roi.pos().x()) - 0:int(self.real_space_roi.pos().x() + self.real_space_roi.size().x()) + 1,
+                   :, :]
+        self.dp = self.dp.sum(axis=(0,1))
         self.diffraction_pattern_image_item.setImage(np.log(self.dp + 1))
 
     def update_real(self):
         """ Update the real space image by summing in diffraction space
         """
         self.rs = self.sa[:, :,
-                  int(self.diffraction_space_roi.pos().y()) - 1:int(self.diffraction_space_roi.pos().y() + self.diffraction_space_roi.size().y()) + 0,
-                  int(self.diffraction_space_roi.pos().x()) - 1:int(self.diffraction_space_roi.pos().x() + self.diffraction_space_roi.size().x()) + 0]
+                  int(self.diffraction_space_roi.pos().y()) - 0:int(self.diffraction_space_roi.pos().y() + self.diffraction_space_roi.size().y()) + 1,
+                  int(self.diffraction_space_roi.pos().x()) - 0:int(self.diffraction_space_roi.pos().x() + self.diffraction_space_roi.size().x()) + 1]
         self.rs = self.rs.sum(axis=(2, 3))
         self.real_space_image_item.setImage(self.rs, autoRange=True)
     
