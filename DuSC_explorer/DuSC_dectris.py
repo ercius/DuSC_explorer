@@ -243,7 +243,7 @@ class fourD(QWidget):
         """
 
         fd = pg.FileDialog()
-        fd.setNameFilter("Dectis (*.hdf5, *.h5)")
+        fd.setNameFilter("Dectris (*_master.h5)")
         fd.setDirectory(str(self.current_dir))
         fd.setFileMode(pg.FileDialog.ExistingFile)
 
