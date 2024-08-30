@@ -134,9 +134,8 @@ class fourD(QWidget):
         self.log_diffraction = True
         self.handle_size = 10
 
-        self.available_colormaps = ['thermal', 'flame', 'yellowy', 'bipolar', 'spectrum', 'cyclic', 'greyclip', 'grey',
-                                    'viridis', 'inferno', 'plasma', 'magma']
-        self.colormap = pg.colormap.getFromMatplotlib('grey')
+        self.available_colormaps = ['viridis', 'inferno', 'plasma', 'magma','cividis','CET-C5','CET-C5s']
+        self.colormap = 'cividis' # default colormap
 
         super(fourD, self).__init__(*args, *kwargs)
         self.setWindowTitle("NCEM: Dectris Arina 4D Data Explorer")
