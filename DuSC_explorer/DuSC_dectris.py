@@ -105,7 +105,8 @@ class fileDECTRIS:
         self.data_shape = (shape_square, shape_square, dd.shape[1], dd.shape[2])
         dd = dd.reshape(self.data_shape)
         if remove_bad_pixels:
-            self.remove_bad_pixels(dd)
+            mm = dd.mean()
+            self.remove_bad_pixels(dd, value=mm)
         return dd
 
     def remove_bad_pixels(self, data, value=0, bad_pixels=None):
@@ -138,7 +139,7 @@ class fourD(QWidget):
         self.colormap = pg.colormap.getFromMatplotlib('grey')
 
         super(fourD, self).__init__(*args, *kwargs)
-        self.setWindowTitle("NCEM: TitanX 4D Data Explorer")
+        self.setWindowTitle("NCEM: Dectris Arina 4D Data Explorer")
         self.setWindowIcon(QtGui.QIcon('MF_logo_only_small.ico'))
 
         # Set the update strategy to the JIT version
