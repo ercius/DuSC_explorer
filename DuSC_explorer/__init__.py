@@ -49,8 +49,9 @@ class DuSC(QWidget):
         self.wavelength = 0.0197
         self.camera_length_mm = 110
         self.physical_pixel_size_mm = 0.01
-        self.centerx = 288
-        self.centery = 288
+        self.probe_step_size = 1 # in nanometers
+        self.centerx = 287
+        self.centery = 287
 
         self.unit = 'None'
         
@@ -200,8 +201,6 @@ class DuSC(QWidget):
         self.real_space_roi.sigRegionChanged.connect(self._update_position_message)
         self.diffraction_space_roi.sigRegionChanged.connect(self._update_position_message)
 
-    # Parts of this code were copied and adjusted from the SMV popup code. Will need to further adjust, so that the users input has an effect on the rings, etc. 
-
     def reset_view(self):
         # Reset the real space ROI to its initial position and size
         self.real_space_roi.setPos([ii // 4 + ii //8 for ii in self.scan_dimensions][::-1])
@@ -223,8 +222,9 @@ class DuSC(QWidget):
         self.wavelength = 0.0197
         self.camera_length_mm = 110
         self.physical_pixel_size_mm = 0.01
-        self.centerx = 288
-        self.centery = 288
+        self.probe_step_size = 1 # nanometers
+        self.centerx = 287
+        self.centery = 287
         self.unit = 'None'
 
         # Reinitialize scale bars
@@ -264,6 +264,7 @@ class DuSC(QWidget):
         self.setting3 = QLineEdit(str(self.physical_pixel_size_mm))
         self.setting4 = QLineEdit(str(self.centerx))
         self.setting5 = QLineEdit(str(self.centery))
+        self.setting6 = QLineEdit(str(self.probe_step_size))
 
         popUpLayout = QFormLayout()
         popUpLayout.addRow('Wavelength (angstroms)', self.setting1)
@@ -271,8 +272,9 @@ class DuSC(QWidget):
         popUpLayout.addRow('Physical pixel size (mm)', self.setting3)
         popUpLayout.addRow('Beam center row (pixels)', self.setting5)
         popUpLayout.addRow('Beam center column (pixels)', self.setting4)
+        popUpLayout.addRow('Probe step size (nm)', self.setting6)
 
-        # I created push buttons allowing the user to choose between various units for their respective rings
+        # Create push buttons allowing the user to choose between various units for the rings
         unit_label = QLabel('Resolution Rings:')
         self.angstrom_button = QPushButton('Å')
         self.mrad_button = QPushButton('Mrad')
@@ -323,10 +325,11 @@ class DuSC(QWidget):
         self.physical_pixel_size_mm = float(self.setting3.text())
         self.centerx = int(self.setting4.text()) 
         self.centery = int(self.setting5.text())
+        self.probe_step_size = float(self.setting6.text())
 
         self.popUp.close()
         # This portion will perform any necessary updates or calculations with the new metadata
-        self.update_ring_labels
+        self.update_ring_labels()
         self.add_concentric_rings()
         self.update_scalebar_labels()
 
@@ -584,11 +587,11 @@ class DuSC(QWidget):
 
         return picture
 
-    # Generating a label for the scale bar
     def generate_label(self, space_type):
+        """Generate the label for the scale bars"""
         if space_type == "real":
             # Calculating the label in nanometers for real space
-            nm_label = self.physical_pixel_size_mm * 1e6
+            nm_label = self.probe_step_size
             return f"{round(nm_label)} nm"
         elif space_type == "diffraction":
             # Calculating the label in reciprocal angstroms for diffraction space
@@ -596,8 +599,8 @@ class DuSC(QWidget):
             reciprocal_angstrom_label = 1 / angstrom 
             return f"{reciprocal_angstrom_label:g} Å⁻¹"
 
-    # Method I utilized to add a scale bar to the view
     def add_scale_bar(self, view, image_item, color, font_size, space_type):
+        """Add a scale bar to the view"""
         dimensions = image_item.image.shape
         scale_height = 7  # Scale height in pixels
 
@@ -624,20 +627,18 @@ class DuSC(QWidget):
 
         return scale_bar, label_item
     
-    # Adding scale bars to both real and diffraction space images
     def add_scale_bars(self):
+        """Add scale bars to both real and diffraction space images"""
         color = 'white'
         font_size = 12
-
 
         if not hasattr(self, 'real_space_scale_bar') or self.real_space_scale_bar is None:
             self.real_space_scale_bar, self.real_space_scale_label = self.add_scale_bar(self.view, self.real_space_image_item, color, font_size, "real")
         if not hasattr(self, 'diffraction_space_scale_bar') or self.diffraction_space_scale_bar is None:
             self.diffraction_space_scale_bar, self.diffraction_space_scale_label = self.add_scale_bar(self.view2, self.diffraction_pattern_image_item, color, font_size, "diffraction")
 
-
-    # Updating the position and text of the scale bar labels
     def update_label_position(self, scale_bar, scale_label, image_item, label_text):
+        """Update the position and text of the scale bar labels."""
         scale_label.setPlainText(label_text)
         scale_length = scale_bar.boundingRect().width()
         bar_x = scale_bar.pos().x()
@@ -645,8 +646,8 @@ class DuSC(QWidget):
         label_y = image_item.height() - scale_label.boundingRect().height() - 35
         scale_label.setPos(label_x, label_y)
 
-    # Updating the labels of the scale bars 
     def update_scalebar_labels(self):
+        """Update the scale bar labels."""
         if self.real_space_scale_bar and self.real_space_scale_label:
             nm_label = self.physical_pixel_size_mm * 1e6
             real_space_label_text = f"{round(nm_label)} nm"
@@ -689,8 +690,8 @@ class DuSC(QWidget):
         if self.diffraction_space_scale_bar and self.diffraction_space_scale_label:
             self.set_scale_bar_position(self.diffraction_space_scale_bar, self.diffraction_space_scale_label, self.diffraction_pattern_image_item, position)
 
-    # Creating rings and labels for the diffraction space image
     def create_ring_and_label(self, radius_pixels, theta, i):
+        """Create rings and labels for the diffration space image."""
         ring = QGraphicsEllipseItem(self.centerx - radius_pixels, self.centery - radius_pixels, 2 * radius_pixels, 2 * radius_pixels)
         ring.setPen(pg.mkPen('black', width=3))
         self.view2.addItem(ring)
