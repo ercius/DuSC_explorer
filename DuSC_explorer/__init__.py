@@ -523,7 +523,7 @@ class DuSC(QWidget):
         self.scan_dimensions = self.sa.scan_shape
         self.frame_dimensions = self.sa.frame_shape
         self.num_frames_per_scan = self.sa.num_frames_per_scan
-        print('scan dimensions = {}'.format(self.scan_dimensions))
+        print('scan dimensions = {0[0]}, {0[1]}'.format(self.scan_dimensions))
 
         # Pre-calculate to speed things up
         self.statusBar.showMessage("Converting the data...")
@@ -602,10 +602,16 @@ class DuSC(QWidget):
     def add_scale_bar(self, view, image_item, color, font_size, space_type):
         """Add a scale bar to the view"""
         dimensions = image_item.image.shape
-        scale_height = 7  # Scale height in pixels
-
-        scale_length = 100 # Scale length in pixels
-
+        
+        if image_item is self.diffraction_pattern_image_item:
+            print(image_item.height())
+            scale_height = 7  # Scale height in pixels
+            scale_length = 100 # Scale length in pixels
+        else:
+            scale_height = image_item.height() / 100
+            scale_length = image_item.width() / 10
+            print(scale_height, scale_length)
+        
         label = self.generate_label(space_type)
 
         picture = self.generate_picture(scale_length, scale_height, label, color, font_size)
@@ -620,7 +626,11 @@ class DuSC(QWidget):
         label_item.setFont(QtGui.QFont("Arial", font_size))
         label_item.setDefaultTextColor(QtGui.QColor(color))
         view.addItem(label_item)
-        label_item.setPos(20 + scale_length / 2 - label_item.boundingRect().width() / 2, image_item.height() - scale_height - 35)
+        
+        if image_item is self.diffraction_pattern_image_item:
+            label_item.setPos(20 + scale_length / 2 - label_item.boundingRect().width() / 2, image_item.height() - scale_height - 35)
+        else:
+            label_item.setPos(5 + scale_length / 2 - label_item.boundingRect().width() / 2, image_item.height() - scale_height - 5)
 
         scale_bar.setVisible(False)
         label_item.setVisible(False)
@@ -631,7 +641,7 @@ class DuSC(QWidget):
         """Add scale bars to both real and diffraction space images"""
         color = 'white'
         font_size = 12
-
+        print(self.diffraction_pattern_image_item.pixelSize())
         if not hasattr(self, 'real_space_scale_bar') or self.real_space_scale_bar is None:
             self.real_space_scale_bar, self.real_space_scale_label = self.add_scale_bar(self.view, self.real_space_image_item, color, font_size, "real")
         if not hasattr(self, 'diffraction_space_scale_bar') or self.diffraction_space_scale_bar is None:
@@ -648,8 +658,9 @@ class DuSC(QWidget):
 
     def update_scalebar_labels(self):
         """Update the scale bar labels."""
+        print('update labels')
         if self.real_space_scale_bar and self.real_space_scale_label:
-            nm_label = self.physical_pixel_size_mm * 1e6
+            nm_label = self.probe_step_size
             real_space_label_text = f"{round(nm_label)} nm"
             self.update_label_position(self.real_space_scale_bar, self.real_space_scale_label, self.real_space_image_item, real_space_label_text)
 
@@ -678,7 +689,12 @@ class DuSC(QWidget):
 
         scale_length = scale_bar.boundingRect().width()
         label_x = x_pos + scale_length / 2 - scale_label.boundingRect().width() / 2
-        label_y = image_item.height() - scale_label.boundingRect().height() - 35
+        if image_item is self.diffraction_pattern_image_item:
+            label_y = image_item.height() - scale_label.boundingRect().height() - image_item.height()/16#35
+        if image_item is self.real_space_image_item:
+            label_y = image_item.height() - scale_label.boundingRect().height() - image_item.height()/16#35
+        print(f'{image_item.height()=}')
+        print(label_x, label_y)
         scale_label.setPos(label_x, label_y)
 
     def toggle_scalebar(self, position):
@@ -799,7 +815,6 @@ class DuSC(QWidget):
         im = self.rs.reshape(self.scan_dimensions)
         self.real_space_image_item.setImage(im, autoRange=True)
         
-
     @staticmethod
     @jit(["uint32[:](uint32[:,:,:], uint32[:,:,:], int64, int64, int64, int64)"], nopython=True, nogil=True, parallel=True)
     def getImage_jit(rows, cols, left, right, bot, top):
