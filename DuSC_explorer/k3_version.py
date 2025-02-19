@@ -171,8 +171,9 @@ class fourD(QWidget):
 
         # Load data as a SparseArray class
         with ncempy.io.dm.fileDM(fPath) as f0:
-            dm0 = f0.getDataset(0)
-
+            dm0 = f0.getDataset(2)
+            print('TEMP!! I have to crop by one!')
+            dm0['data'] = dm0['data'][:-1,:,:,:]
             scanI = dm0['data'].shape[0]
             scanJ = dm0['data'].shape[1]
             numkI = dm0['data'].shape[2]
