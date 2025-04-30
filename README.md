@@ -9,15 +9,27 @@ A graphical user interface based on stempy and pyqtgraph to visualize sparse 4D-
 The easiest way to install is to use python's pip command:
 
  - (Optional) Set up a virtual environment (e.g. using conda)
- - Run `$ pip install DuSC_explorer` at a command prompt
+ - Run the following command at a command prompt
+ ```bash
+pip install DuSC_explorer
+```
+ - See the "compatibility" section below for installing QT bindings.
 
 ## From source
 
 If you want to develop or get the newest changes:
 
  - Clone the repository using git.
- - Change directories to the base directory containing the `pyproject.toml` file
- - Install locally and editable using ``bash $ pip install -e .``
+ - Change directories to the base directory containing the `pyproject.toml` file.
+ - Install locally and editable by running this in a terminal
+```bash
+pip install -e .
+```
+
+# Tutorial
+
+To get started with the program please see our [tutorial](https://github.com/ercius/DuSC_explorer/blob/main/DuSC_explorer_tutorial.md). You can also download example data from a recently published paper from this Zenodo repository:
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10387146.svg)](https://doi.org/10.5281/zenodo.10387146).
 
 # Compatibility
 
@@ -25,9 +37,11 @@ This program requires pyqtgraph >=0.13. You may also need to install different v
 
 # Running the program
 
-If you installed using pip or from source (see above) then you can run
+If you installed using pip or from source (see above) then you can simply type the program name in the command line and press enter:
 
-``$ DuSC_explorer``
+```bash
+$ DuSC_explorer
+```
 
 in a terminal or command prompt in the correct virtual environment and the GUI should start.
 
