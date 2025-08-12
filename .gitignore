@@ -1,3 +1,6 @@
 dist
+venv
+.idea
+.vscode
 .ipynb_checkpoints
 *.egg-info
