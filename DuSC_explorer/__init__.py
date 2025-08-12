@@ -10,7 +10,7 @@ from datetime import datetime
 import pyqtgraph as pg
 from pyqtgraph.graphicsItems.ROI import Handle
 import numpy as np
-from tifffile import imsave
+from tifffile import imwrite
 from numba import jit, prange
 import stempy.io as stio
 
@@ -400,18 +400,20 @@ class DuSC(QWidget):
             out_path = Path(file_name)
         else:
             return
-
+        
         # Get the data and change to float
         if action.text() == 'Export diffraction (TIF)':
             if out_path.suffix != '.tif':
                 out_path = out_path.with_suffix('.tif')
-            imsave(out_path, self.dp.reshape(self.frame_dimensions).astype(np.float32))
+            imwrite(out_path, self.dp.reshape(self.frame_dimensions).astype(np.float32))
         elif action.text() == 'Export diffraction (SMV)':
             if out_path.suffix != '.img':
                 out_path = out_path.with_suffix('.img')
             self._write_smv(out_path)
         elif action.text() == 'Export real (TIF)':
-            imsave(out_path, self.rs.reshape(self.scan_dimensions).astype(np.float32))
+            if out_path.suffix != '.tif':
+                out_path = out_path.with_suffix('.tif')
+            imwrite(out_path, self.rs.reshape(self.scan_dimensions).astype(np.float32))
         else:
             print('Export: unknown action {}'.format(action.text()))
 
