@@ -30,8 +30,8 @@ except ImportError:
     print("Cupy not detected")
 
 # Add argument for gpu mode
-parser = argparse.argumentParser()
-parse.add_argument('--gpu', dest='gpu_mode', action='store_true')
+parser = argparse.ArgumentParser()
+parser.add_argument('--gpu', dest='gpu_mode', action='store_true')
 args = parser.parse_args()
 
 class DuSC(QWidget):
@@ -886,7 +886,7 @@ class DuSC(QWidget):
                             dp[pos] += 1
         return dp
 
-class DuSC_gpu(fourD):
+class DuSC_gpu(DuSC):
     def __init__(self, *args, **kwargs):
         
         self.get_image_cupy_3 = cp.ElementwiseKernel(
