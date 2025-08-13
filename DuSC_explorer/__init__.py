@@ -895,7 +895,7 @@ class DuSC_gpu(DuSC):
                                 'out = ((fr_full % 576) > bot) * ((fr_full % 576) < top) * ((fr_full % 576) > bot) * ((fr_full % 576) < top)',
                                 'get_image_cupy_2')
         
-        super(fourD_gpu, self).__init__(*args, **kwargs)
+        super(DuSC_gpu, self).__init__(*args, **kwargs)
         
         # Disconnect CPU function
         self.diffraction_space_roi.sigRegionChanged.disconnect(self.update_real)
@@ -909,7 +909,10 @@ class DuSC_gpu(DuSC):
         self.diffraction_space_roi.sigRegionChanged.connect(self.update_real)
         #self.real_space_roi.sigRegionChanged.connect(self._update_position_message)
         #self.diffraction_space_roi.sigRegionChanged.connect(self._update_position_message)
-        
+
+        self.update_real()
+        self.update_diffr()
+    
     def setData(self, fPath):
         """ Load the data from the HDF5 file. Must be in
         the format output by stempy.io.write_to_hdf5().
@@ -970,8 +973,9 @@ class DuSC_gpu(DuSC):
         self.real_space_roi.setPos([ii // 4 + ii //8 for ii in self.scan_dimensions])
         self.diffraction_space_roi.setPos([ii // 4 + ii // 8 for ii in self.frame_dimensions])
 
-        #self.update_real()
-        #self.update_diffr()
+        # This can no be done here. The slots have not been updated to the GPU functions yet.
+        # self.update_real()
+        # self.update_diffr()
 
         self.statusBar.showMessage('loaded {}'.format(fPath.name))
     
