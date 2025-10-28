@@ -1,10 +1,9 @@
 """
-Load TitanX data and show real and reciprocal space.
+Load Dectris Arina data and show real and reciprocal space.
 
-The real space ROI can be rotated
+Based on DuSC_explorer, but uses dense operations.
 
 author: Peter Ercius
-date: 2023/11/02
 
 """
 
@@ -13,9 +12,8 @@ from pathlib import Path
 import pyqtgraph as pg
 from pyqtgraph.graphicsItems.ROI import Handle
 import numpy as np
-#from scipy import ndimage
 import ncempy 
-#from tifffile import imwrite
+from tifffile import imwrite
 import h5py
 import hdf5plugin
 
@@ -23,7 +21,7 @@ from qtpy.QtWidgets import *
 from qtpy.QtCore import QRectF
 from qtpy import QtGui
 
-class fourD(QWidget):
+class DuSC(QWidget):
 
     def __init__(self, *args, **kwargs):
 
@@ -44,13 +42,9 @@ class fourD(QWidget):
         self.available_colormaps = ['viridis', 'inferno', 'plasma', 'magma','cividis','CET-C5','CET-C5s']
         self.colormap = 'cividis' # default colormap
 
-        super(fourD, self).__init__(*args, *kwargs)
+        super(DuSC, self).__init__(*args, *kwargs)
         self.setWindowTitle("NCEM: Dectris Arina 4D Data Explorer")
         self.setWindowIcon(QtGui.QIcon('MF_logo_only_small.ico'))
-
-        # Set the update strategy to the JIT version
-        #self.update_real = self.update_real_stempy
-        #self.update_diffr = self.update_diffr_stempy
 
         # Add a graphics/view/image
         # Need to set invertY = True and row-major
@@ -130,8 +124,6 @@ class fourD(QWidget):
         
         self.open_file()
         
-        # self.real_space_roi.addRotateHandle((0, 0), (0.5, 0.5))
-        
         self.real_space_roi.sigRegionChanged.connect(self.update_diffr)
         self.diffraction_space_roi.sigRegionChanged.connect(self.update_real)
         self.real_space_roi.sigRegionChanged.connect(self._update_position_message)
@@ -169,17 +161,6 @@ class fourD(QWidget):
             The path of to the file to load.
         """
         self.statusBar.showMessage("Loading the data...")
-
-        # Load DM data
-        #with ncempy.io.dm.fileDM(fPath) as f0:
-        #    dm0 = f0.getDataset(0)
-
-        #    scanI = int(f0.allTags['.ImageList.2.ImageTags.Series.nimagesx'])
-        #    scanJ = int(f0.allTags['.ImageList.2.ImageTags.Series.nimagesy'])
-        #    numkI = dm0['data'].shape[2]
-        #    numkJ = dm0['data'].shape[1]
-
-         #   self.sa = dm0['data'].reshape([scanJ,scanI,numkJ,numkI])
         
         # Load Dectris data
         with ncempy.io.dectris.fileDECTRIS(fPath) as dectris:
@@ -216,23 +197,9 @@ class fourD(QWidget):
                 
         self.statusBar.showMessage('loaded {}'.format(fPath.name))
     
-
     def update_diffr(self):
         """ Update the diffraction space image by summing in real space
         """
-        # Get the region of the real space ROI
-        #out = self.real_space_roi.getArrayRegion(self.dp, self.real_space_image_item,returnMappedCoords=True,order=0)
-
-        # Setup a mask with the correct dimensions
-        #mask = np.zeros(self.scan_dimensions, dtype=bool)
-        #mask[np.round(out[1][0].astype(np.uint16)), np.round(out[1][1]).astype(np.uint16)] = 1
-        #ndimage.binary_closing(mask, output=mask)
-        
-        #out2 = self.real_space_roi.getArraySlice(self.dp, self.real_space_image_item)
-
-        #temp = self.sa[out2[0][0],out2[0][1],:,:]
-        #mask = mask[out2[0][0],out2[0][1]]
-        #self.dp = temp.sum(axis=(0,1), dtype=np.uint64)
         
         self.dp = self.sa[int(self.real_space_roi.pos().y()) - 0:int(self.real_space_roi.pos().y() + self.real_space_roi.size().y()) + 1,
                    int(self.real_space_roi.pos().x()) - 0:int(self.real_space_roi.pos().x() + self.real_space_roi.size().x()) + 1,
@@ -340,10 +307,18 @@ class fourD(QWidget):
         with open(out_path, 'rb+') as f0:
             f0.seek(512, 0)
             f0.write(im)
-if __name__ == '__main__':
+
+def open_file():
+    """Start the graphical user interface by opening a file. This is used from a python interpreter."""
+    main()
+
+def main():
     """Main function used to start the GUI."""
     
     qapp = QApplication([])
-    fourD_view = fourD()
-    fourD_view.show()
+    DuSC_view = DuSC()
+    DuSC_view.show()
     qapp.exec_()
+
+if __name__ == '__main__':
+    main()
