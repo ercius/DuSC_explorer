@@ -47,10 +47,6 @@ class DuSC(QWidget):
         self.setWindowTitle("NCEM: TitanX 4D Data Explorer")
         self.setWindowIcon(QtGui.QIcon('MF_logo_only_small.ico'))
 
-        # Set the update strategy to the JIT version
-        #self.update_real = self.update_real_stempy
-        #self.update_diffr = self.update_diffr_stempy
-
         # Add a graphics/view/image
         # Need to set invertY = True and row-major
         self.graphics = pg.GraphicsLayoutWidget()
@@ -215,14 +211,14 @@ class DuSC(QWidget):
         out = self.real_space_roi.getArrayRegion(self.dp, self.real_space_image_item,returnMappedCoords=True,order=0)
         # Setup a mask with the correct dimensions
         mask = np.zeros(self.scan_dimensions, dtype=bool)
-        mask[np.round(out[1][0].astype(np.uint16)), np.round(out[1][1]).astype(np.uint16)] = 1
+        mask[np.round(out[1][0].astype(np.uint32)), np.round(out[1][1]).astype(np.uint32)] = 1
         ndimage.binary_closing(mask, output=mask)
         
         out2 = self.real_space_roi.getArraySlice(self.dp, self.real_space_image_item)
 
         temp = self.sa[out2[0][0],out2[0][1],:,:]
         mask = mask[out2[0][0],out2[0][1]]
-        self.dp = temp.sum(axis=(0,1),where=mask[:,:,None,None], dtype=np.uint16)
+        self.dp = temp.sum(axis=(0,1),where=mask[:, :, None, None], dtype=np.uint32)
 
         self.diffraction_pattern_image_item.setImage(np.log(self.dp + 1))
 
