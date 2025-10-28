@@ -14,7 +14,7 @@ import pyqtgraph as pg
 from pyqtgraph.graphicsItems.ROI import Handle
 import numpy as np
 #from scipy import ndimage
-#import ncempy 
+import ncempy 
 #from tifffile import imwrite
 import h5py
 import hdf5plugin
@@ -22,99 +22,6 @@ import hdf5plugin
 from qtpy.QtWidgets import *
 from qtpy.QtCore import QRectF
 from qtpy import QtGui
-
-class fileDECTRIS:
-    def __init__(self, filename, verbose=False):
-        self._verbose = verbose
-        self.raw_shape = [0, 0, 0] # shape of data on disk
-        self.data_shape = [0, 0, 0, 0] # the shape of the final 4D dataset
-        self.file_hdl = None
-        self.data_dtype = None
-
-        self.bad_pixels = ((49, 75), (93,118), (95,119), (108, 57))
-        
-        if hasattr(filename, 'read'):
-            try:
-                self.file_path = Path(filename.name)
-                self.file_name = self.file_path.name
-            except AttributeError:
-                self.file_path = None
-                self.file_name = None
-        else:
-            # check filename type, change to pathlib.Path
-            if isinstance(filename, str):
-                filename = Path(filename)
-            elif isinstance(filename, Path):
-                pass
-            else:
-                raise TypeError('Filename is supposed to be a string or pathlib.Path or file object')
-            self.file_path = filename
-            self.file_name = self.file_path.name
-
-        # Try opening the file
-        try:
-            self.file_hdl = h5py.File(filename, 'r')
-            assert self.file_hdl['/entry/data']
-        except:
-            print('Error opening file: "{}"'.format(filename))
-            raise
-
-        # if this is a HDF5 file
-        if self.file_hdl:
-            # Find the initial shape of the data set
-            for v in self.file_hdl['/entry/data'].values():
-                self.raw_shape[0] = self.raw_shape[0] + v.shape[0]
-                self.raw_shape[1] = v.shape[1]
-                self.raw_shape[2] = v.shape[2]
-                self.data_dtype = v.dtype
-
-    def __del__(self):
-        """Destructor for EMD file object.
-
-        """
-        # close the file
-        # if(not self.file_hdl.closed):
-        self.file_hdl.close()
-
-    def __enter__(self):
-        """Implement python's with statement
-
-        """
-        return self
-
-    def __exit__(self, exception_type, exception_value, traceback):
-        """Implement python's with statement
-        and close the file via __del__()
-        """
-        self.__del__()
-        return None
-
-    def get_dataset(self, remove_bad_pixels=False):
-    
-        # Pre allocate space
-        dd = np.zeros(self.raw_shape, dtype=self.data_dtype)
-        # Read in the data in all linked files
-        ii = 0
-        for v in self.file_hdl['/entry/data'].values():
-            dd[ii:ii+v.shape[0]] = v[:]
-            ii += v.shape[0]
-
-        # Reshape assuming square
-        shape_square = int((dd.shape[0])**0.5)
-        assert dd.shape[0] == shape_square**2
-        self.data_shape = (shape_square, shape_square, dd.shape[1], dd.shape[2])
-        dd = dd.reshape(self.data_shape)
-        if remove_bad_pixels:
-            mm = dd.mean()
-            self.remove_bad_pixels(dd, value=mm)
-        return dd
-
-    def remove_bad_pixels(self, data, value=0, bad_pixels=None):
-        if bad_pixels:
-            self.bad_pixels = bad_pixels
-        for bad in self.bad_pixels:
-            data[:,:,bad[0], bad[1]] = value
-        
 
 class fourD(QWidget):
 
@@ -275,7 +182,7 @@ class fourD(QWidget):
          #   self.sa = dm0['data'].reshape([scanJ,scanI,numkJ,numkI])
         
         # Load Dectris data
-        with fileDECTRIS(fPath) as dectris:
+        with ncempy.io.dectris.fileDECTRIS(fPath) as dectris:
             self.sa = dectris.get_dataset(remove_bad_pixels=True)
             scanI = self.sa.shape[0]
             scanJ = self.sa.shape[1]
