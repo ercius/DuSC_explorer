@@ -1,7 +1,7 @@
 """
 Load TitanX data and show real and reciprocal space.
 
-The real space ROI can be rotated
+The real space ROI can be rotated. This requires scipy.
 
 author: Peter Ercius
 date: 2023/11/02
@@ -21,7 +21,7 @@ from qtpy.QtWidgets import *
 from qtpy.QtCore import QRectF
 from qtpy import QtGui
 
-class fourD(QWidget):
+class DuSC(QWidget):
 
     def __init__(self, *args, **kwargs):
 
@@ -43,7 +43,7 @@ class fourD(QWidget):
                                     'viridis', 'inferno', 'plasma', 'magma']
         self.colormap = pg.colormap.getFromMatplotlib('grey')
 
-        super(fourD, self).__init__(*args, *kwargs)
+        super(DuSC, self).__init__(*args, *kwargs)
         self.setWindowTitle("NCEM: TitanX 4D Data Explorer")
         self.setWindowIcon(QtGui.QIcon('MF_logo_only_small.ico'))
 
@@ -326,10 +326,19 @@ class fourD(QWidget):
         with open(out_path, 'rb+') as f0:
             f0.seek(512, 0)
             f0.write(im)
-if __name__ == '__main__':
+
+def open_file():
+    """Start the graphical user interface by opening a file. This is used from a python interpreter."""
+    main()
+
+def main():
     """Main function used to start the GUI."""
     
     qapp = QApplication([])
-    fourD_view = fourD()
-    fourD_view.show()
+    DuSC_view = DuSC()
+    DuSC_view.show()
     qapp.exec_()
+
+if __name__ == '__main__':
+    main()
+
